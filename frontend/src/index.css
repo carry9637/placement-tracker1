@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-family: "Satoshi", "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+  --surface: 2 6 23;
+  --surface-soft: 15 23 42;
+  --line: 255 255 255;
+  --accent-cyan: 103 232 249;
+  --accent-emerald: 110 231 183;
+  --accent-amber: 252 211 77;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+  background: rgb(var(--surface));
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    rgb(var(--surface));
+  background-size: 48px 48px;
+  color: #f8fafc;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(var(--accent-cyan), 0.28);
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border: 2px solid rgba(15, 23, 42, 0.8);
+  border-radius: 999px;
+}
+
+.glass-panel {
+  border: 1px solid rgba(var(--line), 0.1);
+  background: linear-gradient(135deg, rgba(var(--line), 0.08), rgba(var(--line), 0.035));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(20px);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
