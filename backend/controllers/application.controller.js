@@ -17,10 +17,10 @@ const applicationPopulate = [
 
 const STATUS_TRANSITIONS = {
   applied: ["shortlisted", "rejected", "withdrawn"],
-  shortlisted: ["assessment-scheduled", "interview-scheduled", "rejected", "withdrawn"],
+  shortlisted: ["assessment-scheduled", "interview-scheduled", "offer-received", "rejected", "withdrawn"],
   "assessment-scheduled": ["assessment-completed", "rejected", "withdrawn"],
-  "assessment-completed": ["interview-scheduled", "rejected", "withdrawn"],
-  "interview-scheduled": ["interview-completed", "rejected", "withdrawn"],
+  "assessment-completed": ["interview-scheduled", "offer-received", "rejected", "withdrawn"],
+  "interview-scheduled": ["interview-completed", "offer-received", "rejected", "withdrawn"],
   "interview-completed": ["offer-received", "rejected", "withdrawn"],
   "offer-received": ["withdrawn"],
   rejected: [],

@@ -22,6 +22,10 @@ import { StudentReadinessPage } from "../pages/student/StudentReadinessPage";
 import { StudentSettingsPage } from "../pages/student/StudentSettingsPage";
 import { MentorDashboard } from "../pages/mentor/MentorDashboard";
 import { AdminDashboard } from "../pages/admin/AdminDashboard";
+import { AdminCompaniesPage } from "../pages/admin/AdminCompaniesPage";
+import { AdminJobsPage } from "../pages/admin/AdminJobsPage";
+import { AdminSkillsPage } from "../pages/admin/AdminSkillsPage";
+import { AdminStudentsPage } from "../pages/admin/AdminStudentsPage";
 import { PlaceholderPage } from "../pages/public/PlaceholderPage";
 
 export function AppRoutes() {
@@ -69,9 +73,10 @@ export function AppRoutes() {
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="companies" element={<PlaceholderPage title="Companies" role="Admin" />} />
-              <Route path="jobs" element={<PlaceholderPage title="Jobs" role="Admin" />} />
-              <Route path="students" element={<PlaceholderPage title="Students" role="Admin" />} />
+              <Route path="companies" element={<AdminCompaniesPage />} />
+              <Route path="jobs" element={<AdminJobsPage />} />
+              <Route path="skills" element={<AdminSkillsPage />} />
+              <Route path="students" element={<AdminStudentsPage />} />
               <Route path="reports" element={<PlaceholderPage title="Reports" role="Admin" />} />
               <Route path="settings" element={<PlaceholderPage title="Settings" role="Admin" />} />
             </Route>

@@ -45,6 +45,7 @@ export const roleNavigation = {
     { label: "Dashboard", path: "/admin/dashboard", icon: FiGrid },
     { label: "Companies", path: "/admin/companies", icon: FiBriefcase },
     { label: "Jobs", path: "/admin/jobs", icon: FiLayers },
+    { label: "Skills", path: "/admin/skills", icon: FiTarget },
     { label: "Students", path: "/admin/students", icon: FiUsers },
     { label: "Reports", path: "/admin/reports", icon: FiActivity },
     { label: "Settings", path: "/admin/settings", icon: FiSettings },

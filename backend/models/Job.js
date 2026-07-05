@@ -4,6 +4,25 @@ const WORK_MODES = ["remote", "onsite", "hybrid"];
 const JOB_TYPES = ["full-time", "part-time", "internship", "contract", "apprenticeship"];
 const JOB_STATUSES = ["draft", "open", "closed", "cancelled", "archived"];
 
+const getDeadlineExpiryTime = (deadline) => {
+  if (!deadline) {
+    return 0;
+  }
+
+  const deadlineDate = new Date(deadline);
+  const isDateOnlyDeadline =
+    deadlineDate.getUTCHours() === 0 &&
+    deadlineDate.getUTCMinutes() === 0 &&
+    deadlineDate.getUTCSeconds() === 0 &&
+    deadlineDate.getUTCMilliseconds() === 0;
+
+  if (isDateOnlyDeadline) {
+    deadlineDate.setUTCHours(23, 59, 59, 999);
+  }
+
+  return deadlineDate.getTime();
+};
+
 const salarySchema = new mongoose.Schema(
   {
     min: {
@@ -150,7 +169,7 @@ const jobSchema = new mongoose.Schema(
 );
 
 jobSchema.virtual("isExpired").get(function isExpired() {
-  return this.deadline ? this.deadline.getTime() < Date.now() : false;
+  return this.deadline ? getDeadlineExpiryTime(this.deadline) < Date.now() : false;
 });
 
 jobSchema.virtual("isOpenForApplications").get(function isOpenForApplications() {

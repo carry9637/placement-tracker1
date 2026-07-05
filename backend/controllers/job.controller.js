@@ -12,6 +12,36 @@ const jobPopulate = [
   { path: "createdBy", select: "name email role" },
 ];
 
+const normalizeDateOnlyDeadline = (deadline) => {
+  if (!deadline) {
+    return deadline;
+  }
+
+  const deadlineDate = new Date(deadline);
+  const isDateOnlyDeadline =
+    deadlineDate.getUTCHours() === 0 &&
+    deadlineDate.getUTCMinutes() === 0 &&
+    deadlineDate.getUTCSeconds() === 0 &&
+    deadlineDate.getUTCMilliseconds() === 0;
+
+  if (isDateOnlyDeadline) {
+    deadlineDate.setUTCHours(23, 59, 59, 999);
+  }
+
+  return deadlineDate;
+};
+
+const normalizeJobPayload = (payload) => {
+  if (!Object.prototype.hasOwnProperty.call(payload, "deadline")) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    deadline: normalizeDateOnlyDeadline(payload.deadline),
+  };
+};
+
 const assertJobReferences = async ({ company, requiredSkills = [] }) => {
   if (company) {
     const companyExists = await Company.exists({ _id: company });
@@ -62,7 +92,7 @@ const createJob = asyncHandler(async (req, res) => {
   await assertJobReferences(req.body);
 
   const job = await Job.create({
-    ...req.body,
+    ...normalizeJobPayload(req.body),
     createdBy: req.user._id,
   });
 
@@ -73,7 +103,7 @@ const createJob = asyncHandler(async (req, res) => {
 const updateJob = asyncHandler(async (req, res) => {
   await assertJobReferences(req.body);
 
-  const job = await Job.findByIdAndUpdate(req.params.id, req.body, {
+  const job = await Job.findByIdAndUpdate(req.params.id, normalizeJobPayload(req.body), {
     returnDocument: "after",
     runValidators: true,
   }).populate(jobPopulate);

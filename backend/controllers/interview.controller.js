@@ -66,17 +66,11 @@ const createInterview = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Application not found");
   }
 
-  const interview = await Interview.create(req.body);
-
-  if (application.status !== "interview-scheduled") {
-    application.status = "interview-scheduled";
-    application.timeline.push({
-      status: "interview-scheduled",
-      note: "Interview scheduled",
-      changedBy: req.user._id,
-    });
-    await application.save();
+  if (application.status !== "shortlisted") {
+    throw new ApiError(400, "Interview can only be scheduled after the application is shortlisted");
   }
+
+  const interview = await Interview.create(req.body);
 
   const populatedInterview = await Interview.findById(interview._id).populate(interviewPopulate);
   res.status(201).json(new ApiResponse(201, populatedInterview, "Interview created successfully"));
@@ -106,19 +100,6 @@ const updateInterviewFeedback = asyncHandler(async (req, res) => {
   interview.feedback = req.body.feedback;
   interview.result = req.body.result;
   await interview.save();
-
-  if (["passed", "failed", "on-hold"].includes(interview.result)) {
-    const application = await Application.findById(interview.application);
-    if (application && application.status === "interview-scheduled") {
-      application.status = "interview-completed";
-      application.timeline.push({
-        status: "interview-completed",
-        note: "Interview completed",
-        changedBy: req.user._id,
-      });
-      await application.save();
-    }
-  }
 
   const populatedInterview = await Interview.findById(interview._id).populate(interviewPopulate);
   res.status(200).json(new ApiResponse(200, populatedInterview, "Interview feedback updated successfully"));

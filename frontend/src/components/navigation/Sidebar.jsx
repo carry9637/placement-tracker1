@@ -34,7 +34,9 @@ export function Sidebar({ role, collapsed, onToggle }) {
               to={item.path}
               className={({ isActive }) =>
                 `group flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition ${
-                  isActive ? "bg-white text-slate-950" : "text-slate-400 hover:bg-white/10 hover:text-white"
+                  isActive
+                    ? "border border-cyan-300/25 bg-cyan-300/10 text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,0.12)]"
+                    : "text-slate-400 hover:bg-white/10 hover:text-white"
                 }`
               }
             >
