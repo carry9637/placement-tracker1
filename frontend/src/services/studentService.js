@@ -28,6 +28,11 @@ export const studentService = {
     return unwrap(response);
   },
 
+  async updateApplicationStatus(id, payload) {
+    const response = await apiClient.patch(`/applications/${id}/status`, payload);
+    return unwrap(response);
+  },
+
   async withdrawApplication(id, note = "Application withdrawn") {
     const response = await apiClient.patch(`/applications/${id}/withdraw`, { note });
     return unwrap(response);
@@ -40,6 +45,11 @@ export const studentService = {
 
   async getSkills(params = {}) {
     const response = await apiClient.get("/skills", { params });
+    return unwrap(response);
+  },
+
+  async getNotifications(params = {}) {
+    const response = await apiClient.get("/notifications", { params });
     return unwrap(response);
   },
 };

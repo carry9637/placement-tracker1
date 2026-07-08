@@ -7,13 +7,12 @@ import { GlassCard } from "../../components/ui/GlassCard";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../services/apiClient";
-import { ROLES } from "../../config/roles";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const { register, handleSubmit, formState } = useForm({ defaultValues: { email: "", role: ROLES.STUDENT } });
+  const { register, handleSubmit, formState } = useForm({ defaultValues: { email: "" } });
 
   const onSubmit = async (values) => {
     try {
@@ -33,14 +32,6 @@ export function LoginPage() {
         <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Input label="Email" icon={FiMail} {...register("email", { required: "Email is required" })} error={formState.errors.email?.message} />
           <Input label="Password" type="password" icon={FiLock} {...register("password", { required: "Password is required" })} error={formState.errors.password?.message} />
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-300">Demo role</span>
-            <select className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white outline-none" {...register("role")}>
-              <option value={ROLES.STUDENT}>Student</option>
-              <option value={ROLES.MENTOR}>Mentor</option>
-              <option value={ROLES.ADMIN}>Admin</option>
-            </select>
-          </label>
           <Button type="submit" className="w-full" disabled={formState.isSubmitting}>
             {formState.isSubmitting ? "Signing in..." : "Continue"}
           </Button>

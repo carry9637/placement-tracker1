@@ -53,6 +53,10 @@ const createMentorNote = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Student not found");
   }
 
+  if (req.user.role === "mentor" && student.assignedMentor?.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "Mentors can only create notes for assigned students");
+  }
+
   if (req.body.application) {
     const application = await Application.findOne({
       _id: req.body.application,

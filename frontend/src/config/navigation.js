@@ -13,6 +13,7 @@ import {
   FiSliders,
   FiSettings,
   FiShield,
+  FiFlag,
   FiTarget,
   FiUsers,
 } from "react-icons/fi";
@@ -37,14 +38,15 @@ export const roleNavigation = {
   mentor: [
     { label: "Dashboard", path: "/mentor/dashboard", icon: FiGrid },
     { label: "Students", path: "/mentor/students", icon: FiUsers },
-    { label: "Reviews", path: "/mentor/reviews", icon: FiMessageSquare },
-    { label: "Interviews", path: "/mentor/interviews", icon: FiCalendar },
-    { label: "Insights", path: "/mentor/insights", icon: FiBarChart2 },
+    { label: "Applications", path: "/mentor/applications", icon: FiClipboard },
+    { label: "Sessions", path: "/mentor/interviews", icon: FiCalendar },
+    { label: "Notes", path: "/mentor/notes", icon: FiMessageSquare },
   ],
   admin: [
     { label: "Dashboard", path: "/admin/dashboard", icon: FiGrid },
     { label: "Companies", path: "/admin/companies", icon: FiBriefcase },
     { label: "Jobs", path: "/admin/jobs", icon: FiLayers },
+    { label: "Drives", path: "/admin/drives", icon: FiFlag },
     { label: "Skills", path: "/admin/skills", icon: FiTarget },
     { label: "Students", path: "/admin/students", icon: FiUsers },
     { label: "Reports", path: "/admin/reports", icon: FiActivity },

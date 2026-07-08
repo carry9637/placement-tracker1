@@ -49,7 +49,7 @@ const sendAuthResponse = (res, statusCode, user, message) => {
 const register = asyncHandler(async (req, res) => {
   validateRequest(req);
 
-  const { name, email, password, role = "student" } = req.body;
+  const { name, email, password } = req.body;
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -60,7 +60,7 @@ const register = asyncHandler(async (req, res) => {
     name,
     email,
     password,
-    role,
+    role: "student",
   });
 
   return sendAuthResponse(res, 201, user, "Registration successful");

@@ -21,7 +21,7 @@ router
 
 router.patch(
   "/:id/status",
-  authorizeRoles("mentor", "admin"),
+  authorizeRoles("student", "mentor", "admin"),
   updateStatusValidation,
   validateRequest,
   applicationController.updateApplicationStatus

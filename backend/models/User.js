@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const USER_ROLES = ["student", "mentor", "admin"];
+const USER_ROLES = ["student", "mentor", "admin", "recruiter"];
 
 const studentProfileSchema = new mongoose.Schema(
   {
@@ -137,6 +137,24 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: USER_ROLES,
       default: "student",
+      index: true,
+    },
+    assignedMentor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true,
+    },
+    recruiterCompany: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: null,
+      index: true,
+    },
+    approvalStatus: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "approved",
       index: true,
     },
     isActive: {

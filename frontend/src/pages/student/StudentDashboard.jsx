@@ -1,4 +1,4 @@
-import { FiBriefcase, FiCalendar, FiCheckCircle, FiTarget } from "react-icons/fi";
+import { FiBell, FiBriefcase, FiCalendar, FiCheckCircle, FiTarget } from "react-icons/fi";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { PageContainer } from "../../components/common/PageContainer";
 import { ErrorState } from "../../components/feedback/ErrorState";
@@ -18,14 +18,19 @@ export function StudentDashboard() {
   const applications = useAsyncData(() => studentService.getApplications({ limit: 50 }), []);
   const interviews = useAsyncData(() => studentService.getInterviews({ limit: 20, sort: "date" }), []);
   const skills = useAsyncData(() => studentService.getSkills({ limit: 100 }), []);
+  const jobs = useAsyncData(() => studentService.getJobs({ limit: 4, sort: "deadline" }), []);
+  const notifications = useAsyncData(() => studentService.getNotifications({ limit: 5 }), []);
 
-  const loading = applications.loading || interviews.loading || skills.loading;
-  const error = applications.error || interviews.error || skills.error;
+  const loading = applications.loading || interviews.loading || skills.loading || jobs.loading || notifications.loading;
+  const error = applications.error || interviews.error || skills.error || jobs.error || notifications.error;
   const applicationItems = applications.data || [];
   const interviewItems = interviews.data || [];
   const skillItems = skills.data || [];
   const stats = getApplicationStats(applicationItems);
   const readiness = getReadinessScore({ user, applications: applicationItems, interviews: interviewItems, skills: skillItems });
+  const profile = user?.profile || {};
+  const profileCompletion = Math.round((["phone", "headline", "college", "branch", "graduationYear", "cgpa", "github", "linkedin"].filter((field) => profile[field]).length / 8) * 100);
+  const upcomingInterviews = interviewItems.filter((interview) => interview.result === "pending" && new Date(interview.date) >= new Date()).slice(0, 3);
   const statusChart = Object.entries(stats.byStatus).map(([status, value]) => ({ name: statusLabels[status] || status, value }));
   const recentActivities = applicationItems.flatMap((application) =>
     (application.timeline || []).map((item) => ({
@@ -40,9 +45,10 @@ export function StudentDashboard() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard label="Readiness score" value={`${readiness}%`} helper="Profile, resume, applications, interviews" icon={FiTarget} />
+            <MetricCard label="Profile" value={`${profileCompletion}%`} helper={profile.resume?.fileName ? "Resume uploaded" : "Resume pending"} icon={FiCheckCircle} />
             <MetricCard label="Applications" value={stats.total} helper={`${stats.active} active pipelines`} icon={FiBriefcase} />
             <MetricCard label="Interviews" value={interviewItems.length} helper="Scheduled and completed rounds" icon={FiCalendar} />
-            <MetricCard label="Offers" value={stats.offers} helper="Offer received status" icon={FiCheckCircle} />
+            <MetricCard label="Offers" value={stats.offers} helper="Released or accepted offers" icon={FiBell} />
           </div>
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -79,14 +85,41 @@ export function StudentDashboard() {
             </GlassCard>
           </div>
 
-          <GlassCard className="mt-6">
-            <h2 className="mb-4 font-semibold text-white">Notifications</h2>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-300">Application updates are enabled.</div>
-              <div className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-300">Interview reminders are enabled.</div>
-              <div className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-300">Readiness insights update from your activity.</div>
-            </div>
-          </GlassCard>
+          <div className="mt-6 grid gap-6 xl:grid-cols-3">
+            <GlassCard>
+              <h2 className="mb-4 font-semibold text-white">Upcoming interviews</h2>
+              <div className="space-y-3">
+                {upcomingInterviews.length ? upcomingInterviews.map((interview) => (
+                  <div key={interview._id} className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-300">
+                    <p className="font-medium text-white">{interview.application?.job?.title || "Interview"}</p>
+                    <p className="mt-1 text-slate-400">{formatDate(interview.date)} - {interview.type}</p>
+                  </div>
+                )) : <p className="text-sm text-slate-400">No upcoming interviews yet.</p>}
+              </div>
+            </GlassCard>
+            <GlassCard>
+              <h2 className="mb-4 font-semibold text-white">Recommended jobs</h2>
+              <div className="space-y-3">
+                {(jobs.data || []).length ? jobs.data.map((job) => (
+                  <div key={job._id} className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-300">
+                    <p className="font-medium text-white">{job.title}</p>
+                    <p className="mt-1 text-slate-400">{job.company?.name || "Company"} - {formatDate(job.deadline)}</p>
+                  </div>
+                )) : <p className="text-sm text-slate-400">Open jobs will appear here as recommendations.</p>}
+              </div>
+            </GlassCard>
+            <GlassCard>
+              <h2 className="mb-4 font-semibold text-white">Recent notifications</h2>
+              <div className="space-y-3">
+                {(notifications.data || []).length ? notifications.data.map((notification) => (
+                  <div key={notification._id} className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-300">
+                    <p className="font-medium text-white">{notification.title}</p>
+                    <p className="mt-1 text-slate-400">{notification.message}</p>
+                  </div>
+                )) : <p className="text-sm text-slate-400">No notifications yet.</p>}
+              </div>
+            </GlassCard>
+          </div>
         </>
       )}
     </PageContainer>

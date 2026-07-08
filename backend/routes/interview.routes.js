@@ -16,9 +16,9 @@ router.use(protect);
 
 router.get("/", interviewController.getInterviews);
 router.get("/:id", idValidation, validateRequest, interviewController.getInterviewById);
-router.post("/", authorizeRoles("mentor", "admin"), createInterviewValidation, validateRequest, interviewController.createInterview);
-router.patch("/:id", authorizeRoles("mentor", "admin"), updateInterviewValidation, validateRequest, interviewController.updateInterview);
-router.patch("/:id/feedback", authorizeRoles("mentor", "admin"), feedbackValidation, validateRequest, interviewController.updateInterviewFeedback);
+router.post("/", authorizeRoles("admin"), createInterviewValidation, validateRequest, interviewController.createInterview);
+router.patch("/:id", authorizeRoles("admin"), updateInterviewValidation, validateRequest, interviewController.updateInterview);
+router.patch("/:id/feedback", authorizeRoles("admin"), feedbackValidation, validateRequest, interviewController.updateInterviewFeedback);
 router.delete("/:id", authorizeRoles("admin"), idValidation, validateRequest, interviewController.deleteInterview);
 
 module.exports = router;

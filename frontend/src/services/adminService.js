@@ -87,4 +87,34 @@ export const adminService = {
     const response = await apiClient.patch("/interviews/" + id + "/feedback", payload);
     return unwrap(response);
   },
+
+  async getUsers(params = {}) {
+    const response = await apiClient.get("/users", { params });
+    return unwrap(response);
+  },
+
+  async assignMentor(studentId, payload) {
+    const response = await apiClient.patch("/users/" + studentId + "/mentor", payload);
+    return unwrap(response);
+  },
+
+  async approveRecruiter(recruiterId, payload) {
+    const response = await apiClient.patch("/users/" + recruiterId + "/approve-recruiter", payload);
+    return unwrap(response);
+  },
+
+  async getPlacementDrives(params = {}) {
+    const response = await apiClient.get("/placement-drives", { params });
+    return unwrap(response);
+  },
+
+  async createPlacementDrive(payload) {
+    const response = await apiClient.post("/placement-drives", payload);
+    return unwrap(response);
+  },
+
+  async updatePlacementDrive(id, payload) {
+    const response = await apiClient.patch("/placement-drives/" + id, payload);
+    return unwrap(response);
+  },
 };

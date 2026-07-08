@@ -23,6 +23,7 @@ export function AdminStudentsPage() {
   const [feedbackDraft, setFeedbackDraft] = useState({ interviewId: "", score: "", result: "passed", feedback: "" });
   const applications = useAsyncData(() => adminService.getApplications({ status: query.status, limit: 100 }), [query.status]);
   const interviews = useAsyncData(() => adminService.getInterviews({ limit: 100, sort: "date" }), []);
+  const mentors = useAsyncData(() => adminService.getUsers({ role: "mentor", isActive: true, limit: 100, sort: "name" }), []);
   const students = getUniqueStudentsFromApplications(applications.data || []).filter((student) => {
     const search = query.search.trim().toLowerCase();
     if (!search) return true;
@@ -61,6 +62,22 @@ export function AdminStudentsPage() {
       syncSelectedApplication(response.data);
       toast.success("Application status updated");
       refreshWorkflow();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setWorkingId("");
+    }
+  };
+
+  const assignMentor = async (studentId, mentorId) => {
+    if (!mentorId) return;
+
+    setWorkingId(studentId);
+    try {
+      await adminService.assignMentor(studentId, { mentor: mentorId });
+      toast.success("Mentor assigned");
+      refreshWorkflow();
+      setSelectedStudent((student) => (student ? { ...student, assignedMentor: (mentors.data || []).find((mentor) => mentor._id === mentorId) } : student));
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -128,9 +145,18 @@ export function AdminStudentsPage() {
           <select className="h-12 rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white" value={query.status} onChange={(event) => setQuery((value) => ({ ...value, status: event.target.value, page: 1 }))}>
             <option value="">All application statuses</option>
             <option value="applied">Applied</option>
+            <option value="under-review">Under Review</option>
+            <option value="mentor-assigned">Mentor Assigned</option>
+            <option value="mentoring-scheduled">Mentoring Scheduled</option>
+            <option value="mentoring-completed">Mentoring Completed</option>
+            <option value="mentor-recommended">Mentor Recommended</option>
             <option value="shortlisted">Shortlisted</option>
-            <option value="interview-scheduled">Interview Scheduled</option>
-            <option value="offer-received">Offer Received</option>
+            <option value="recruiter-review">Recruiter Review</option>
+            <option value="interview-round-1">Interview Round 1</option>
+            <option value="interview-round-2">Interview Round 2</option>
+            <option value="hr-round">HR Round</option>
+            <option value="selected">Selected</option>
+            <option value="offer-released">Offer Released</option>
             <option value="rejected">Rejected</option>
             <option value="withdrawn">Withdrawn</option>
           </select>
@@ -169,14 +195,26 @@ export function AdminStudentsPage() {
               <p>Email: {selectedStudent.email}</p>
               <p className="mt-2">Role: {selectedStudent.role}</p>
               <p className="mt-2">Applications: {selectedStudent.applications}</p>
+              <label className="mt-4 block">
+                <span className="mb-2 block text-sm font-medium text-slate-300">Assigned mentor</span>
+                <select
+                  className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white"
+                  value={selectedStudent.assignedMentor?._id || selectedStudent.assignedMentor || ""}
+                  disabled={mentors.loading || workingId === selectedStudent._id}
+                  onChange={(event) => assignMentor(selectedStudent._id, event.target.value)}
+                >
+                  <option value="">Select mentor</option>
+                  {(mentors.data || []).map((mentor) => <option key={mentor._id} value={mentor._id}>{mentor.name}</option>)}
+                </select>
+              </label>
             </div>
 
             <div className="space-y-3">
               {(selectedStudent.applicationRecords || []).map((application) => {
                 const applicationInterviews = getApplicationInterviews(application._id);
-                const canSchedule = application.status === "shortlisted";
+                const canSchedule = ["shortlisted", "recruiter-review", "interview-round-1", "interview-round-2", "hr-round"].includes(application.status);
                 const hasInterviewFeedback = applicationInterviews.some((interview) => interview.result !== "pending" || interview.feedback);
-                const isClosed = ["offer-received", "rejected", "withdrawn"].includes(application.status);
+                const isClosed = ["offer-received", "offer-released", "offer-accepted", "offer-declined", "rejected", "withdrawn"].includes(application.status);
 
                 return (
                   <div key={application._id} className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
@@ -195,9 +233,89 @@ export function AdminStudentsPage() {
                             variant="secondary"
                             icon={FiCheck}
                             disabled={workingId === application._id}
-                            onClick={() => updateStatus(application, "shortlisted", "Shortlisted by admin review")}
+                            onClick={() => updateStatus(application, "under-review", "Moved to admin review")}
+                          >
+                            Start review
+                          </Button>
+                        ) : null}
+                        {application.status === "under-review" ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "mentor-assigned", "Mentor assigned for guidance")}
+                          >
+                            Mark mentor assigned
+                          </Button>
+                        ) : null}
+                        {application.status === "mentor-recommended" ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "shortlisted", "Shortlisted after mentor recommendation")}
                           >
                             Shortlist
+                          </Button>
+                        ) : null}
+                        {application.status === "shortlisted" ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "recruiter-review", "Moved to recruiter review")}
+                          >
+                            Recruiter review
+                          </Button>
+                        ) : null}
+                        {application.status === "recruiter-review" ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "interview-round-1", "Interview round 1 started")}
+                          >
+                            Round 1
+                          </Button>
+                        ) : null}
+                        {application.status === "interview-round-1" && hasInterviewFeedback ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "interview-round-2", "Interview round 2 started")}
+                          >
+                            Round 2
+                          </Button>
+                        ) : null}
+                        {application.status === "interview-round-2" && hasInterviewFeedback ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "hr-round", "HR round started")}
+                          >
+                            HR round
+                          </Button>
+                        ) : null}
+                        {application.status === "hr-round" && hasInterviewFeedback ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "selected", "Candidate selected")}
+                          >
+                            Selected
+                          </Button>
+                        ) : null}
+                        {application.status === "selected" ? (
+                          <Button
+                            variant="secondary"
+                            icon={FiCheck}
+                            disabled={workingId === application._id}
+                            onClick={() => updateStatus(application, "offer-released", "Offer released")}
+                          >
+                            Release offer
                           </Button>
                         ) : null}
                         {canSchedule ? (
@@ -208,16 +326,6 @@ export function AdminStudentsPage() {
                             onClick={() => setScheduleDraft({ applicationId: application._id, date: "", type: "technical" })}
                           >
                             Schedule interview
-                          </Button>
-                        ) : null}
-                        {canSchedule && hasInterviewFeedback ? (
-                          <Button
-                            variant="secondary"
-                            icon={FiCheck}
-                            disabled={workingId === application._id}
-                            onClick={() => updateStatus(application, "offer-received", "Offer received after admin review")}
-                          >
-                            Mark offer
                           </Button>
                         ) : null}
                         <Button

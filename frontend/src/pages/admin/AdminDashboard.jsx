@@ -1,4 +1,4 @@
-import { FiBriefcase, FiCalendar, FiClipboard, FiHome, FiUsers } from "react-icons/fi";
+import { FiBriefcase, FiCalendar, FiClipboard, FiFlag, FiHome, FiUsers } from "react-icons/fi";
 import { PageContainer } from "../../components/common/PageContainer";
 import { ErrorState } from "../../components/feedback/ErrorState";
 import { SkeletonLoader } from "../../components/feedback/SkeletonLoader";
@@ -11,11 +11,13 @@ import { compactDate, getUniqueStudentsFromApplications } from "../../utils/admi
 
 export function AdminDashboard() {
   const dashboard = useAsyncData(async () => {
-    const [companies, jobs, applications, interviews] = await Promise.all([
+    const [companies, jobs, applications, interviews, recruiters, drives] = await Promise.all([
       adminService.getCompanies({ limit: 1 }),
       adminService.getJobs({ limit: 1 }),
       adminService.getApplications({ limit: 100 }),
       adminService.getInterviews({ limit: 100 }),
+      adminService.getUsers({ role: "recruiter", limit: 1 }),
+      adminService.getPlacementDrives({ limit: 1 }),
     ]);
 
     const applicationItems = applications.data || [];
@@ -38,6 +40,8 @@ export function AdminDashboard() {
           jobs: jobs.meta?.total || 0,
           applications: applications.meta?.total || 0,
           interviews: interviews.meta?.total || 0,
+          recruiters: recruiters.meta?.total || 0,
+          drives: drives.meta?.total || 0,
         },
         recentActivities,
       },
@@ -54,9 +58,11 @@ export function AdminDashboard() {
         <ErrorState description={dashboard.error} />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
             <MetricCard label="Students" value={totals.students} helper="Derived from applications" icon={FiUsers} />
             <MetricCard label="Companies" value={totals.companies} helper="Placement partners" icon={FiHome} />
+            <MetricCard label="Recruiters" value={totals.recruiters} helper="Company HR accounts" icon={FiUsers} />
+            <MetricCard label="Drives" value={totals.drives} helper="Campus hiring drives" icon={FiFlag} />
             <MetricCard label="Jobs" value={totals.jobs} helper="All job records" icon={FiBriefcase} />
             <MetricCard label="Applications" value={totals.applications} helper="Submitted pipelines" icon={FiClipboard} />
             <MetricCard label="Interviews" value={totals.interviews} helper="Scheduled rounds" icon={FiCalendar} />

@@ -1,6 +1,19 @@
 export const statusLabels = {
   applied: "Applied",
+  "under-review": "Under Review",
+  "mentor-assigned": "Mentor Assigned",
+  "mentoring-scheduled": "Mentoring Scheduled",
+  "mentoring-completed": "Mentoring Completed",
+  "mentor-recommended": "Mentor Recommended",
   shortlisted: "Shortlisted",
+  "recruiter-review": "Recruiter Review",
+  "interview-round-1": "Interview Round 1",
+  "interview-round-2": "Interview Round 2",
+  "hr-round": "HR Round",
+  selected: "Selected",
+  "offer-released": "Offer Released",
+  "offer-accepted": "Offer Accepted",
+  "offer-declined": "Offer Declined",
   "assessment-scheduled": "Assessment Scheduled",
   "assessment-completed": "Assessment Completed",
   "interview-scheduled": "Interview Scheduled",
@@ -15,10 +28,10 @@ export const getApplicationStats = (applications = []) => {
     (acc, application) => {
       acc.total += 1;
       acc.byStatus[application.status] = (acc.byStatus[application.status] || 0) + 1;
-      if (["shortlisted", "assessment-scheduled", "assessment-completed", "interview-scheduled", "interview-completed", "offer-received"].includes(application.status)) {
+      if (["under-review", "mentor-assigned", "mentoring-scheduled", "mentoring-completed", "mentor-recommended", "shortlisted", "recruiter-review", "interview-round-1", "interview-round-2", "hr-round", "selected", "assessment-scheduled", "assessment-completed", "interview-scheduled", "interview-completed", "offer-received", "offer-released"].includes(application.status)) {
         acc.active += 1;
       }
-      if (application.status === "offer-received") acc.offers += 1;
+      if (["offer-received", "offer-released", "offer-accepted"].includes(application.status)) acc.offers += 1;
       return acc;
     },
     { total: 0, active: 0, offers: 0, byStatus: {} }

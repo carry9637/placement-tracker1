@@ -14,6 +14,7 @@ const sharedJobValidation = (optional = false) => {
   return [
     maybe(body("title")).trim().isLength({ min: 2, max: 140 }).withMessage("Title must be between 2 and 140 characters"),
     optional ? optionalObjectIdBody("company") : requiredObjectIdBody("company"),
+    body("placementDrive").optional({ nullable: true, checkFalsy: true }).custom(isObjectId).withMessage("placementDrive must be a valid id"),
     maybe(body("location")).trim().notEmpty().withMessage("Location is required").isLength({ max: 160 }).withMessage("Location must not exceed 160 characters"),
     maybe(body("workMode")).isIn(WORK_MODES).withMessage(`Work mode must be one of: ${WORK_MODES.join(", ")}`),
     maybe(body("jobType")).isIn(JOB_TYPES).withMessage(`Job type must be one of: ${JOB_TYPES.join(", ")}`),

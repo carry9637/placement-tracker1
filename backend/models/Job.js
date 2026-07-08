@@ -102,6 +102,12 @@ const jobSchema = new mongoose.Schema(
       required: [true, "Company is required"],
       index: true,
     },
+    placementDrive: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PlacementDrive",
+      default: null,
+      index: true,
+    },
     location: {
       type: String,
       required: [true, "Location is required"],

@@ -19,6 +19,7 @@ import { compactDate, moneyRange } from "../../utils/adminMetrics";
 const emptyJob = {
   title: "",
   company: "",
+  placementDrive: "",
   location: "",
   workMode: "hybrid",
   jobType: "internship",
@@ -31,6 +32,7 @@ const emptyJob = {
 
 const normalizeJobPayload = (values) => ({
   ...values,
+  placementDrive: values.placementDrive || null,
   requiredSkills: Array.isArray(values.requiredSkills) ? values.requiredSkills : [values.requiredSkills].filter(Boolean),
   salary: {
     ...values.salary,
@@ -45,6 +47,7 @@ export function AdminJobsPage() {
   const [editing, setEditing] = useState(null);
   const jobs = useAsyncData(() => adminService.getJobs({ ...query, limit: 8, sort: "-createdAt" }), [query]);
   const companies = useAsyncData(() => adminService.getCompanies({ limit: 100, sort: "name" }), []);
+  const drives = useAsyncData(() => adminService.getPlacementDrives({ limit: 100, sort: "-createdAt" }), []);
   const skills = useAsyncData(() => adminService.getSkills({ limit: 100, sort: "name" }), []);
   const { control, register, handleSubmit, reset, formState } = useForm({ defaultValues: emptyJob });
 
@@ -59,6 +62,7 @@ export function AdminJobsPage() {
       ...emptyJob,
       ...job,
       company: job.company?._id || job.company,
+      placementDrive: job.placementDrive?._id || job.placementDrive || "",
       requiredSkills: (job.requiredSkills || []).map((skill) => skill._id || skill),
       deadline: job.deadline ? new Date(job.deadline).toISOString().slice(0, 10) : "",
       salary: {
@@ -135,7 +139,7 @@ export function AdminJobsPage() {
                 <div>
                   <h2 className="font-semibold text-white">{job.title}</h2>
                   <p className="mt-1 text-sm text-slate-400">{job.company?.name} - {job.location} - {job.workMode} - {job.jobType}</p>
-                  <p className="mt-2 text-xs text-slate-500">Deadline {compactDate(job.deadline)} - {moneyRange(job.salary)}</p>
+                  <p className="mt-2 text-xs text-slate-500">{job.placementDrive?.name ? `${job.placementDrive.name} - ` : ""}Deadline {compactDate(job.deadline)} - {moneyRange(job.salary)}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs text-cyan-200">{job.status}</span>
@@ -178,6 +182,13 @@ export function AdminJobsPage() {
             {formState.errors.company ? <span className="mt-2 block text-xs text-rose-300">{formState.errors.company.message}</span> : null}
           </label>
           <Input label="Location" {...register("location", { required: "Location is required" })} error={formState.errors.location?.message} />
+          <label>
+            <span className="mb-2 block text-sm font-medium text-slate-300">Placement drive</span>
+            <select className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white" {...register("placementDrive")}>
+              <option value="">No drive</option>
+              {(drives.data || []).map((drive) => <option key={drive._id} value={drive._id}>{drive.name}</option>)}
+            </select>
+          </label>
           <label>
             <span className="mb-2 block text-sm font-medium text-slate-300">Work mode</span>
             <select className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white" {...register("workMode")}>

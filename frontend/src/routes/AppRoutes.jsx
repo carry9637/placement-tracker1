@@ -26,7 +26,13 @@ import { AdminCompaniesPage } from "../pages/admin/AdminCompaniesPage";
 import { AdminJobsPage } from "../pages/admin/AdminJobsPage";
 import { AdminSkillsPage } from "../pages/admin/AdminSkillsPage";
 import { AdminStudentsPage } from "../pages/admin/AdminStudentsPage";
+import { AdminDrivesPage } from "../pages/admin/AdminDrivesPage";
+import { AdminReportsPage } from "../pages/admin/AdminReportsPage";
 import { PlaceholderPage } from "../pages/public/PlaceholderPage";
+import { MentorStudentsPage } from "../pages/mentor/MentorStudentsPage";
+import { MentorApplicationsPage } from "../pages/mentor/MentorApplicationsPage";
+import { MentorInterviewsPage } from "../pages/mentor/MentorInterviewsPage";
+import { MentorNotesPage } from "../pages/mentor/MentorNotesPage";
 
 export function AppRoutes() {
   const location = useLocation();
@@ -62,10 +68,10 @@ export function AppRoutes() {
             <Route path="mentor" element={<MentorLayout />}>
               <Route index element={<Navigate to="/mentor/dashboard" replace />} />
               <Route path="dashboard" element={<MentorDashboard />} />
-              <Route path="students" element={<PlaceholderPage title="Students" role="Mentor" />} />
-              <Route path="reviews" element={<PlaceholderPage title="Reviews" role="Mentor" />} />
-              <Route path="interviews" element={<PlaceholderPage title="Interviews" role="Mentor" />} />
-              <Route path="insights" element={<PlaceholderPage title="Insights" role="Mentor" />} />
+              <Route path="students" element={<MentorStudentsPage />} />
+              <Route path="applications" element={<MentorApplicationsPage />} />
+              <Route path="interviews" element={<MentorInterviewsPage />} />
+              <Route path="notes" element={<MentorNotesPage />} />
             </Route>
           </Route>
 
@@ -75,9 +81,10 @@ export function AppRoutes() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="companies" element={<AdminCompaniesPage />} />
               <Route path="jobs" element={<AdminJobsPage />} />
+              <Route path="drives" element={<AdminDrivesPage />} />
               <Route path="skills" element={<AdminSkillsPage />} />
               <Route path="students" element={<AdminStudentsPage />} />
-              <Route path="reports" element={<PlaceholderPage title="Reports" role="Admin" />} />
+              <Route path="reports" element={<AdminReportsPage />} />
               <Route path="settings" element={<PlaceholderPage title="Settings" role="Admin" />} />
             </Route>
           </Route>

@@ -1,13 +1,18 @@
 const Company = require("../models/Company");
 const Job = require("../models/Job");
+const PlacementDrive = require("../models/PlacementDrive");
 const Skill = require("../models/Skill");
+const User = require("../models/User");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const buildQueryFeatures = require("../utils/queryFeatures");
+const recordAuditLog = require("../utils/auditLogger");
+const { createNotification } = require("../utils/notificationService");
 
 const jobPopulate = [
   { path: "company", select: "name industry location logo website" },
+  { path: "placementDrive", select: "name status registrationDeadline eligibility" },
   { path: "requiredSkills", select: "name category level" },
   { path: "createdBy", select: "name email role" },
 ];
@@ -42,11 +47,36 @@ const normalizeJobPayload = (payload) => {
   };
 };
 
-const assertJobReferences = async ({ company, requiredSkills = [] }) => {
+const notifyStudentsAboutPublishedJob = async ({ req, job }) => {
+  const students = await User.find({ role: "student", isActive: true }).select("_id");
+
+  await Promise.all(
+    students.map((student) =>
+      createNotification({
+        user: student._id,
+        type: "job-published",
+        title: "New job published",
+        message: `${job.title} is now open for applications.`,
+        entityType: "Job",
+        entityId: job._id,
+        createdBy: req.user._id,
+      })
+    )
+  );
+};
+
+const assertJobReferences = async ({ company, placementDrive, requiredSkills = [] }) => {
   if (company) {
     const companyExists = await Company.exists({ _id: company });
     if (!companyExists) {
       throw new ApiError(404, "Company not found");
+    }
+  }
+
+  if (placementDrive) {
+    const driveExists = await PlacementDrive.exists({ _id: placementDrive });
+    if (!driveExists) {
+      throw new ApiError(404, "Placement drive not found");
     }
   }
 
@@ -64,7 +94,7 @@ const getJobs = asyncHandler(async (req, res) => {
     model: Job,
     query: req.query,
     searchableFields: ["title", "description", "location"],
-    allowedFilters: ["company", "location", "workMode", "jobType", "status"],
+    allowedFilters: ["company", "placementDrive", "location", "workMode", "jobType", "status"],
     baseFilter,
     populate: jobPopulate,
     defaultSort: "deadline",
@@ -95,6 +125,11 @@ const createJob = asyncHandler(async (req, res) => {
     ...normalizeJobPayload(req.body),
     createdBy: req.user._id,
   });
+  await recordAuditLog({ req, action: "job_created", entityType: "Job", entityId: job._id });
+
+  if (job.status === "open") {
+    await notifyStudentsAboutPublishedJob({ req, job });
+  }
 
   const populatedJob = await Job.findById(job._id).populate(jobPopulate);
   res.status(201).json(new ApiResponse(201, populatedJob, "Job created successfully"));
@@ -103,13 +138,20 @@ const createJob = asyncHandler(async (req, res) => {
 const updateJob = asyncHandler(async (req, res) => {
   await assertJobReferences(req.body);
 
+  const currentJob = await Job.findById(req.params.id);
+
+  if (!currentJob) {
+    throw new ApiError(404, "Job not found");
+  }
+
   const job = await Job.findByIdAndUpdate(req.params.id, normalizeJobPayload(req.body), {
     returnDocument: "after",
     runValidators: true,
   }).populate(jobPopulate);
+  await recordAuditLog({ req, action: "job_updated", entityType: "Job", entityId: job._id, metadata: { status: job.status } });
 
-  if (!job) {
-    throw new ApiError(404, "Job not found");
+  if (currentJob.status !== "open" && job.status === "open") {
+    await notifyStudentsAboutPublishedJob({ req, job });
   }
 
   res.status(200).json(new ApiResponse(200, job, "Job updated successfully"));

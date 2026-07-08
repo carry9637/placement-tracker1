@@ -26,15 +26,39 @@ export function StudentApplicationsPage() {
     }
   };
 
+  const respondToOffer = async (applicationId, status) => {
+    try {
+      await studentService.updateApplicationStatus(applicationId, {
+        status,
+        note: status === "offer-accepted" ? "Offer accepted by student" : "Offer declined by student",
+      });
+      toast.success(status === "offer-accepted" ? "Offer accepted" : "Offer declined");
+      applications.reload();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
   return (
     <PageContainer eyebrow="Application tracker" title="Applications" description="Track your submitted applications and their full backend timeline.">
       <GlassCard className="mb-6">
         <select className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white sm:w-72" value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value="">All statuses</option>
           <option value="applied">Applied</option>
+          <option value="under-review">Under Review</option>
+          <option value="mentor-assigned">Mentor Assigned</option>
+          <option value="mentoring-scheduled">Mentoring Scheduled</option>
+          <option value="mentoring-completed">Mentoring Completed</option>
+          <option value="mentor-recommended">Mentor Recommended</option>
           <option value="shortlisted">Shortlisted</option>
-          <option value="interview-scheduled">Interview Scheduled</option>
-          <option value="offer-received">Offer Received</option>
+          <option value="recruiter-review">Recruiter Review</option>
+          <option value="interview-round-1">Interview Round 1</option>
+          <option value="interview-round-2">Interview Round 2</option>
+          <option value="hr-round">HR Round</option>
+          <option value="selected">Selected</option>
+          <option value="offer-released">Offer Released</option>
+          <option value="offer-accepted">Offer Accepted</option>
+          <option value="offer-declined">Offer Declined</option>
           <option value="rejected">Rejected</option>
           <option value="withdrawn">Withdrawn</option>
         </select>
@@ -60,9 +84,17 @@ export function StudentApplicationsPage() {
                   </div>
                 ))}
               </div>
-              {!["withdrawn", "rejected", "offer-received"].includes(application.status) ? (
-                <Button variant="danger" className="mt-5" onClick={() => withdraw(application._id)}>Withdraw application</Button>
-              ) : null}
+              <div className="mt-5 flex flex-wrap gap-2">
+                {application.status === "offer-released" ? (
+                  <>
+                    <Button variant="secondary" onClick={() => respondToOffer(application._id, "offer-accepted")}>Accept offer</Button>
+                    <Button variant="danger" onClick={() => respondToOffer(application._id, "offer-declined")}>Decline offer</Button>
+                  </>
+                ) : null}
+                {!["withdrawn", "rejected", "offer-received", "offer-released", "offer-accepted", "offer-declined"].includes(application.status) ? (
+                  <Button variant="danger" onClick={() => withdraw(application._id)}>Withdraw application</Button>
+                ) : null}
+              </div>
             </GlassCard>
           ))}
         </div>
