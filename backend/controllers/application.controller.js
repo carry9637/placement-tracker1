@@ -47,6 +47,16 @@ const STATUS_TRANSITIONS = {
 };
 
 const MENTOR_ALLOWED_STATUSES = ["mentoring-scheduled", "mentoring-completed", "mentor-recommended"];
+const ADMIN_ALLOWED_STATUSES = ["under-review", "mentor-assigned", "shortlisted", "recruiter-review", "rejected"];
+const ADMIN_REJECTABLE_STATUSES = [
+  "applied",
+  "under-review",
+  "mentor-assigned",
+  "mentoring-scheduled",
+  "mentoring-completed",
+  "mentor-recommended",
+  "shortlisted",
+];
 const RECRUITER_ALLOWED_STATUSES = ["interview-round-1", "interview-round-2", "hr-round", "selected", "offer-released", "rejected"];
 const STUDENT_ALLOWED_STATUSES = ["offer-accepted", "offer-declined"];
 
@@ -163,6 +173,14 @@ const assertStatusTransition = (currentStatus, nextStatus) => {
 
 const assertRoleCanSetStatus = (req, application, nextStatus) => {
   if (req.user.role === "admin") {
+    if (!ADMIN_ALLOWED_STATUSES.includes(nextStatus)) {
+      throw new ApiError(403, "Admins can only screen, assign mentors, shortlist, reject before interview, or forward to recruiter");
+    }
+
+    if (nextStatus === "rejected" && !ADMIN_REJECTABLE_STATUSES.includes(application.status)) {
+      throw new ApiError(403, "Admins cannot reject candidates after recruiter interview workflow has started");
+    }
+
     return;
   }
 

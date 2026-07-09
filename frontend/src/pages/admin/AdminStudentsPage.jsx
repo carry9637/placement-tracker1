@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FiCalendar, FiCheck, FiMessageSquare, FiSearch, FiX } from "react-icons/fi";
+import { FiCheck, FiSearch, FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { PageContainer } from "../../components/common/PageContainer";
 import { EmptyState } from "../../components/feedback/EmptyState";
@@ -19,8 +19,6 @@ export function AdminStudentsPage() {
   const [query, setQuery] = useState({ search: "", status: "", page: 1 });
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [workingId, setWorkingId] = useState("");
-  const [scheduleDraft, setScheduleDraft] = useState({ applicationId: "", date: "", type: "technical" });
-  const [feedbackDraft, setFeedbackDraft] = useState({ interviewId: "", score: "", result: "passed", feedback: "" });
   const applications = useAsyncData(() => adminService.getApplications({ status: query.status, limit: 100 }), [query.status]);
   const interviews = useAsyncData(() => adminService.getInterviews({ limit: 100, sort: "date" }), []);
   const mentors = useAsyncData(() => adminService.getUsers({ role: "mentor", isActive: true, limit: 100, sort: "name" }), []);
@@ -78,52 +76,6 @@ export function AdminStudentsPage() {
       toast.success("Mentor assigned");
       refreshWorkflow();
       setSelectedStudent((student) => (student ? { ...student, assignedMentor: (mentors.data || []).find((mentor) => mentor._id === mentorId) } : student));
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setWorkingId("");
-    }
-  };
-
-  const scheduleInterview = async (application) => {
-    if (!scheduleDraft.date) {
-      toast.error("Interview date is required");
-      return;
-    }
-
-    setWorkingId(application._id);
-    try {
-      await adminService.createInterview({
-        application: application._id,
-        date: new Date(scheduleDraft.date).toISOString(),
-        type: scheduleDraft.type,
-      });
-      toast.success("Interview scheduled");
-      setScheduleDraft({ applicationId: "", date: "", type: "technical" });
-      refreshWorkflow();
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setWorkingId("");
-    }
-  };
-
-  const submitFeedback = async (interview) => {
-    if (!feedbackDraft.feedback.trim()) {
-      toast.error("Feedback is required");
-      return;
-    }
-
-    setWorkingId(interview._id);
-    try {
-      await adminService.updateInterviewFeedback(interview._id, {
-        score: feedbackDraft.score === "" ? null : Number(feedbackDraft.score),
-        result: feedbackDraft.result,
-        feedback: feedbackDraft.feedback,
-      });
-      toast.success("Interview feedback saved");
-      setFeedbackDraft({ interviewId: "", score: "", result: "passed", feedback: "" });
-      refreshWorkflow();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -212,9 +164,8 @@ export function AdminStudentsPage() {
             <div className="space-y-3">
               {(selectedStudent.applicationRecords || []).map((application) => {
                 const applicationInterviews = getApplicationInterviews(application._id);
-                const canSchedule = ["shortlisted", "recruiter-review", "interview-round-1", "interview-round-2", "hr-round"].includes(application.status);
-                const hasInterviewFeedback = applicationInterviews.some((interview) => interview.result !== "pending" || interview.feedback);
                 const isClosed = ["offer-received", "offer-released", "offer-accepted", "offer-declined", "rejected", "withdrawn"].includes(application.status);
+                const canAdminReject = ["applied", "under-review", "mentor-assigned", "mentoring-scheduled", "mentoring-completed", "mentor-recommended", "shortlisted"].includes(application.status);
 
                 return (
                   <div key={application._id} className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
@@ -268,104 +219,16 @@ export function AdminStudentsPage() {
                             Recruiter review
                           </Button>
                         ) : null}
-                        {application.status === "recruiter-review" ? (
+                        {canAdminReject ? (
                           <Button
-                            variant="secondary"
-                            icon={FiCheck}
+                            variant="danger"
+                            icon={FiX}
                             disabled={workingId === application._id}
-                            onClick={() => updateStatus(application, "interview-round-1", "Interview round 1 started")}
+                            onClick={() => updateStatus(application, "rejected", "Rejected during admin screening")}
                           >
-                            Round 1
+                            Reject
                           </Button>
                         ) : null}
-                        {application.status === "interview-round-1" && hasInterviewFeedback ? (
-                          <Button
-                            variant="secondary"
-                            icon={FiCheck}
-                            disabled={workingId === application._id}
-                            onClick={() => updateStatus(application, "interview-round-2", "Interview round 2 started")}
-                          >
-                            Round 2
-                          </Button>
-                        ) : null}
-                        {application.status === "interview-round-2" && hasInterviewFeedback ? (
-                          <Button
-                            variant="secondary"
-                            icon={FiCheck}
-                            disabled={workingId === application._id}
-                            onClick={() => updateStatus(application, "hr-round", "HR round started")}
-                          >
-                            HR round
-                          </Button>
-                        ) : null}
-                        {application.status === "hr-round" && hasInterviewFeedback ? (
-                          <Button
-                            variant="secondary"
-                            icon={FiCheck}
-                            disabled={workingId === application._id}
-                            onClick={() => updateStatus(application, "selected", "Candidate selected")}
-                          >
-                            Selected
-                          </Button>
-                        ) : null}
-                        {application.status === "selected" ? (
-                          <Button
-                            variant="secondary"
-                            icon={FiCheck}
-                            disabled={workingId === application._id}
-                            onClick={() => updateStatus(application, "offer-released", "Offer released")}
-                          >
-                            Release offer
-                          </Button>
-                        ) : null}
-                        {canSchedule ? (
-                          <Button
-                            variant="secondary"
-                            icon={FiCalendar}
-                            disabled={workingId === application._id}
-                            onClick={() => setScheduleDraft({ applicationId: application._id, date: "", type: "technical" })}
-                          >
-                            Schedule interview
-                          </Button>
-                        ) : null}
-                        <Button
-                          variant="danger"
-                          icon={FiX}
-                          disabled={workingId === application._id}
-                          onClick={() => updateStatus(application, "rejected", "Rejected after admin review")}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    ) : null}
-
-                    {scheduleDraft.applicationId === application._id ? (
-                      <div className="mt-4 grid gap-3 rounded-xl border border-cyan-300/15 bg-cyan-300/5 p-3 md:grid-cols-[1fr_180px_auto]">
-                        <Input
-                          label="Interview date"
-                          type="datetime-local"
-                          value={scheduleDraft.date}
-                          onChange={(event) => setScheduleDraft((value) => ({ ...value, date: event.target.value }))}
-                        />
-                        <label>
-                          <span className="mb-2 block text-sm font-medium text-slate-300">Type</span>
-                          <select
-                            className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white"
-                            value={scheduleDraft.type}
-                            onChange={(event) => setScheduleDraft((value) => ({ ...value, type: event.target.value }))}
-                          >
-                            <option value="technical">Technical</option>
-                            <option value="hr">HR</option>
-                            <option value="managerial">Managerial</option>
-                            <option value="aptitude">Aptitude</option>
-                            <option value="group-discussion">Group discussion</option>
-                            <option value="other">Other</option>
-                          </select>
-                        </label>
-                        <div className="flex items-end gap-2">
-                          <Button disabled={workingId === application._id} onClick={() => scheduleInterview(application)}>Save</Button>
-                          <Button variant="ghost" onClick={() => setScheduleDraft({ applicationId: "", date: "", type: "technical" })}>Cancel</Button>
-                        </div>
                       </div>
                     ) : null}
 
@@ -377,61 +240,14 @@ export function AdminStudentsPage() {
                               <p className="text-white">{interview.type} round - {compactDate(interview.date)}</p>
                               <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300">{interview.result}</span>
                             </div>
+                            {interview.score != null ? <p className="mt-3 text-sm text-slate-400">Score: {interview.score}/100</p> : null}
                             {interview.feedback ? <p className="mt-3 text-sm text-slate-400">{interview.feedback}</p> : null}
-                            {feedbackDraft.interviewId === interview._id ? (
-                              <div className="mt-3 grid gap-3 md:grid-cols-[120px_160px_1fr_auto]">
-                                <Input
-                                  label="Score"
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={feedbackDraft.score}
-                                  onChange={(event) => setFeedbackDraft((value) => ({ ...value, score: event.target.value }))}
-                                />
-                                <label>
-                                  <span className="mb-2 block text-sm font-medium text-slate-300">Result</span>
-                                  <select
-                                    className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white"
-                                    value={feedbackDraft.result}
-                                    onChange={(event) => setFeedbackDraft((value) => ({ ...value, result: event.target.value }))}
-                                  >
-                                    <option value="passed">Passed</option>
-                                    <option value="failed">Failed</option>
-                                    <option value="on-hold">On hold</option>
-                                    <option value="cancelled">Cancelled</option>
-                                  </select>
-                                </label>
-                                <Input
-                                  label="Feedback"
-                                  value={feedbackDraft.feedback}
-                                  onChange={(event) => setFeedbackDraft((value) => ({ ...value, feedback: event.target.value }))}
-                                />
-                                <div className="flex items-end gap-2">
-                                  <Button disabled={workingId === interview._id} onClick={() => submitFeedback(interview)}>Save</Button>
-                                  <Button variant="ghost" onClick={() => setFeedbackDraft({ interviewId: "", score: "", result: "passed", feedback: "" })}>Cancel</Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <Button
-                                className="mt-3"
-                                variant="secondary"
-                                icon={FiMessageSquare}
-                                onClick={() => setFeedbackDraft({
-                                  interviewId: interview._id,
-                                  score: interview.score ?? "",
-                                  result: interview.result === "pending" ? "passed" : interview.result,
-                                  feedback: interview.feedback || "",
-                                })}
-                              >
-                                Add feedback
-                              </Button>
-                            )}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <p className="mt-4 rounded-xl bg-white/[0.04] p-3 text-xs text-slate-500">
-                        No interview is scheduled for this application.
+                        No recruiter interview is scheduled for this application.
                       </p>
                     )}
                   </div>
