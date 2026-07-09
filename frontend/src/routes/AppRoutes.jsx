@@ -4,6 +4,7 @@ import { PublicLayout } from "../layouts/PublicLayout";
 import { StudentLayout } from "../layouts/StudentLayout";
 import { MentorLayout } from "../layouts/MentorLayout";
 import { AdminLayout } from "../layouts/AdminLayout";
+import { RecruiterLayout } from "../layouts/RecruiterLayout";
 import { PublicRoute } from "./PublicRoute";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { RoleBasedRoute } from "./RoleBasedRoute";
@@ -33,6 +34,15 @@ import { MentorStudentsPage } from "../pages/mentor/MentorStudentsPage";
 import { MentorApplicationsPage } from "../pages/mentor/MentorApplicationsPage";
 import { MentorInterviewsPage } from "../pages/mentor/MentorInterviewsPage";
 import { MentorNotesPage } from "../pages/mentor/MentorNotesPage";
+import { RecruiterDashboard } from "../pages/recruiter/RecruiterDashboard";
+import { RecruiterCompanyPage } from "../pages/recruiter/RecruiterCompanyPage";
+import { RecruiterJobsPage } from "../pages/recruiter/RecruiterJobsPage";
+import { RecruiterApplicationsPage } from "../pages/recruiter/RecruiterApplicationsPage";
+import { RecruiterCandidateDetailsPage } from "../pages/recruiter/RecruiterCandidateDetailsPage";
+import { RecruiterInterviewsPage } from "../pages/recruiter/RecruiterInterviewsPage";
+import { RecruiterOffersPage } from "../pages/recruiter/RecruiterOffersPage";
+import { RecruiterNotificationsPage } from "../pages/recruiter/RecruiterNotificationsPage";
+import { RecruiterSettingsPage } from "../pages/recruiter/RecruiterSettingsPage";
 
 export function AppRoutes() {
   const location = useLocation();
@@ -86,6 +96,21 @@ export function AppRoutes() {
               <Route path="students" element={<AdminStudentsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
               <Route path="settings" element={<PlaceholderPage title="Settings" role="Admin" />} />
+            </Route>
+          </Route>
+
+          <Route element={<RoleBasedRoute allowedRoles={["recruiter"]} />}>
+            <Route path="recruiter" element={<RecruiterLayout />}>
+              <Route index element={<Navigate to="/recruiter/dashboard" replace />} />
+              <Route path="dashboard" element={<RecruiterDashboard />} />
+              <Route path="company" element={<RecruiterCompanyPage />} />
+              <Route path="jobs" element={<RecruiterJobsPage />} />
+              <Route path="applications" element={<RecruiterApplicationsPage />} />
+              <Route path="candidates/:applicationId" element={<RecruiterCandidateDetailsPage />} />
+              <Route path="interviews" element={<RecruiterInterviewsPage />} />
+              <Route path="offers" element={<RecruiterOffersPage />} />
+              <Route path="notifications" element={<RecruiterNotificationsPage />} />
+              <Route path="settings" element={<RecruiterSettingsPage />} />
             </Route>
           </Route>
         </Route>

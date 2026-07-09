@@ -1,6 +1,7 @@
 import {
   FiActivity,
   FiBarChart2,
+  FiBell,
   FiBriefcase,
   FiCalendar,
   FiCheckSquare,
@@ -10,6 +11,7 @@ import {
   FiGrid,
   FiLayers,
   FiMessageSquare,
+  FiSend,
   FiSliders,
   FiSettings,
   FiShield,
@@ -52,6 +54,16 @@ export const roleNavigation = {
     { label: "Reports", path: "/admin/reports", icon: FiActivity },
     { label: "Settings", path: "/admin/settings", icon: FiSettings },
   ],
+  recruiter: [
+    { label: "Dashboard", path: "/recruiter/dashboard", icon: FiGrid },
+    { label: "My Company", path: "/recruiter/company", icon: FiBriefcase },
+    { label: "My Jobs", path: "/recruiter/jobs", icon: FiLayers },
+    { label: "Applications", path: "/recruiter/applications", icon: FiClipboard },
+    { label: "Interviews", path: "/recruiter/interviews", icon: FiCalendar },
+    { label: "Offers", path: "/recruiter/offers", icon: FiSend },
+    { label: "Notifications", path: "/recruiter/notifications", icon: FiBell },
+    { label: "Settings", path: "/recruiter/settings", icon: FiSettings },
+  ],
 };
 
 export const roleQuickActions = {
@@ -69,5 +81,10 @@ export const roleQuickActions = {
     { label: "Create job", icon: FiBriefcase },
     { label: "Invite users", icon: FiUsers },
     { label: "Export report", icon: FiBarChart2 },
+  ],
+  recruiter: [
+    { label: "Post job", icon: FiBriefcase },
+    { label: "Review applicants", icon: FiClipboard },
+    { label: "Schedule interview", icon: FiCalendar },
   ],
 };

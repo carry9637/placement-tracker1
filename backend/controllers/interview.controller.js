@@ -1,5 +1,6 @@
 const Application = require("../models/Application");
 const Interview = require("../models/Interview");
+const Job = require("../models/Job");
 const User = require("../models/User");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -23,6 +24,8 @@ const getStudentApplicationIds = async (studentId) => {
   const applications = await Application.find({ student: studentId }).select("_id");
   return applications.map((application) => application._id);
 };
+
+const getRecruiterCompanyId = (user) => user.recruiterCompany?._id || user.recruiterCompany;
 
 const canAccessInterview = (user, interview) => {
   if (user.role === "admin") {
@@ -62,13 +65,10 @@ const getInterviews = asyncHandler(async (req, res) => {
   }
 
   if (req.user.role === "recruiter") {
-    const applications = await Application.find({ job: { $in: await Application.distinct("job") } })
-      .populate({ path: "job", select: "company" })
-      .select("_id job");
+    const jobs = await Job.find({ company: getRecruiterCompanyId(req.user) }).select("_id");
+    const applications = await Application.find({ job: { $in: jobs.map((job) => job._id) } }).select("_id");
     baseFilter.application = {
-      $in: applications
-        .filter((application) => application.job?.company?.toString() === req.user.recruiterCompany?.toString())
-        .map((application) => application._id),
+      $in: applications.map((application) => application._id),
     };
   }
 
@@ -95,9 +95,15 @@ const getInterviewById = asyncHandler(async (req, res) => {
 });
 
 const createInterview = asyncHandler(async (req, res) => {
-  const application = await Application.findById(req.body.application);
+  const application = await Application.findById(req.body.application).populate({ path: "job", select: "company" });
 
   if (!application) {
+    throw new ApiError(404, "Application not found");
+  }
+
+  const recruiterCompanyId = getRecruiterCompanyId(req.user);
+  const applicationCompanyId = application.job?.company?._id || application.job?.company;
+  if (req.user.role === "recruiter" && (!recruiterCompanyId || applicationCompanyId?.toString() !== recruiterCompanyId.toString())) {
     throw new ApiError(404, "Application not found");
   }
 
@@ -128,22 +134,33 @@ const createInterview = asyncHandler(async (req, res) => {
 });
 
 const updateInterview = asyncHandler(async (req, res) => {
-  const interview = await Interview.findByIdAndUpdate(req.params.id, req.body, {
-    returnDocument: "after",
-    runValidators: true,
-  }).populate(interviewPopulate);
+  const interview = await Interview.findById(req.params.id).populate(interviewPopulate);
 
   if (!interview) {
     throw new ApiError(404, "Interview not found");
   }
 
-  res.status(200).json(new ApiResponse(200, interview, "Interview updated successfully"));
+  if (!canAccessInterview(req.user, interview)) {
+    throw new ApiError(404, "Interview not found");
+  }
+
+  ["date", "type", "score", "feedback", "result"].forEach((field) => {
+    if (req.body[field] !== undefined) interview[field] = req.body[field];
+  });
+
+  await interview.save();
+  const populatedInterview = await Interview.findById(interview._id).populate(interviewPopulate);
+  res.status(200).json(new ApiResponse(200, populatedInterview, "Interview updated successfully"));
 });
 
 const updateInterviewFeedback = asyncHandler(async (req, res) => {
-  const interview = await Interview.findById(req.params.id);
+  const interview = await Interview.findById(req.params.id).populate(interviewPopulate);
 
   if (!interview) {
+    throw new ApiError(404, "Interview not found");
+  }
+
+  if (!canAccessInterview(req.user, interview)) {
     throw new ApiError(404, "Interview not found");
   }
 

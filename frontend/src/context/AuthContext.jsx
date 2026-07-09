@@ -35,9 +35,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (payload) => {
-    const data = await authService.login(payload);
-    setUser(data.user);
-    return data.user;
+    await authService.login(payload);
+    const currentUser = await authService.me();
+    setUser(currentUser);
+    return currentUser;
   };
 
   const register = async (payload) => {

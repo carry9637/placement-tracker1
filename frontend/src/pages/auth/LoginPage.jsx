@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FiLock, FiMail } from "react-icons/fi";
 import { toast } from "react-toastify";
@@ -7,10 +7,10 @@ import { GlassCard } from "../../components/ui/GlassCard";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../services/apiClient";
+import { getRoleDashboardPath } from "../../utils/roleRedirects";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
   const { register, handleSubmit, formState } = useForm({ defaultValues: { email: "" } });
 
@@ -18,7 +18,7 @@ export function LoginPage() {
     try {
       const user = await login({ email: values.email, password: values.password });
       toast.success("Signed in successfully");
-      navigate(location.state?.from || `/${user.role}/dashboard`);
+      navigate(getRoleDashboardPath(user.role), { replace: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     }

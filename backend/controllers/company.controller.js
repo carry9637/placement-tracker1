@@ -18,6 +18,11 @@ const getCompanies = asyncHandler(async (req, res) => {
 const getCompanyById = asyncHandler(async (req, res) => {
   const company = await Company.findById(req.params.id);
 
+  const recruiterCompanyId = req.user.recruiterCompany?._id || req.user.recruiterCompany;
+  if (req.user.role === "recruiter" && req.params.id !== recruiterCompanyId?.toString()) {
+    throw new ApiError(404, "Company not found");
+  }
+
   if (!company) {
     throw new ApiError(404, "Company not found");
   }

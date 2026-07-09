@@ -47,6 +47,7 @@ const STATUS_TRANSITIONS = {
 };
 
 const MENTOR_ALLOWED_STATUSES = ["mentoring-scheduled", "mentoring-completed", "mentor-recommended"];
+const RECRUITER_ALLOWED_STATUSES = ["interview-round-1", "interview-round-2", "hr-round", "selected", "offer-released", "rejected"];
 const STUDENT_ALLOWED_STATUSES = ["offer-accepted", "offer-declined"];
 
 const statusNotificationMap = {
@@ -185,6 +186,18 @@ const assertRoleCanSetStatus = (req, application, nextStatus) => {
 
     if (!MENTOR_ALLOWED_STATUSES.includes(nextStatus)) {
       throw new ApiError(403, "Mentors can only schedule mentoring, complete mentoring, or recommend a student");
+    }
+
+    return;
+  }
+
+  if (req.user.role === "recruiter") {
+    if (!canAccessApplication(req.user, application)) {
+      throw new ApiError(403, "Recruiters can only update applications for their own company");
+    }
+
+    if (!RECRUITER_ALLOWED_STATUSES.includes(nextStatus)) {
+      throw new ApiError(403, "Recruiters can only manage company interview, selection, rejection, and offer stages");
     }
 
     return;

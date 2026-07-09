@@ -7,6 +7,7 @@ import { GlassCard } from "../../components/ui/GlassCard";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../services/apiClient";
+import { getRoleDashboardPath } from "../../utils/roleRedirects";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export function RegisterPage() {
     try {
       const user = await registerUser(values);
       toast.success("Account created");
-      navigate(`/${user.role}/dashboard`);
+      navigate(getRoleDashboardPath(user.role), { replace: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     }

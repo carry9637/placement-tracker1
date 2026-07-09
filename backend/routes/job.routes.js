@@ -15,8 +15,8 @@ router.use(protect);
 
 router.get("/", jobController.getJobs);
 router.get("/:id", idValidation, validateRequest, jobController.getJobById);
-router.post("/", authorizeRoles("admin"), createJobValidation, validateRequest, jobController.createJob);
-router.patch("/:id", authorizeRoles("admin"), updateJobValidation, validateRequest, jobController.updateJob);
+router.post("/", authorizeRoles("admin", "recruiter"), createJobValidation, validateRequest, jobController.createJob);
+router.patch("/:id", authorizeRoles("admin", "recruiter"), updateJobValidation, validateRequest, jobController.updateJob);
 router.delete("/:id", authorizeRoles("admin"), idValidation, validateRequest, jobController.deleteJob);
 
 module.exports = router;

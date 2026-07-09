@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { LoadingScreen } from "../components/feedback/LoadingScreen";
 import { useAuth } from "../hooks/useAuth";
+import { getRoleDashboardPath } from "../utils/roleRedirects";
 
 export function PublicRoute() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -10,7 +11,7 @@ export function PublicRoute() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={`/${user.role}/dashboard`} replace />;
+    return <Navigate to={getRoleDashboardPath(user.role)} replace />;
   }
 
   return <Outlet />;

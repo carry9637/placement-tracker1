@@ -47,6 +47,37 @@ const normalizeJobPayload = (payload) => {
   };
 };
 
+const getRecruiterCompanyId = (user) => user.recruiterCompany?._id || user.recruiterCompany;
+
+const assertRecruiterCanManageCompany = (user, companyId) => {
+  if (user.role !== "recruiter") {
+    return;
+  }
+
+  const recruiterCompanyId = getRecruiterCompanyId(user);
+
+  if (!recruiterCompanyId || user.approvalStatus !== "approved") {
+    throw new ApiError(403, "Recruiter account must be approved and assigned to a company");
+  }
+
+  if (companyId?.toString() !== recruiterCompanyId.toString()) {
+    throw new ApiError(403, "Recruiters can only manage their own company's jobs");
+  }
+};
+
+const getJobBaseFilter = (req) => {
+  if (req.user.role === "student") {
+    return { status: "open" };
+  }
+
+  if (req.user.role === "recruiter") {
+    const recruiterCompanyId = getRecruiterCompanyId(req.user);
+    return recruiterCompanyId ? { company: recruiterCompanyId } : { _id: null };
+  }
+
+  return {};
+};
+
 const notifyStudentsAboutPublishedJob = async ({ req, job }) => {
   const students = await User.find({ role: "student", isActive: true }).select("_id");
 
@@ -89,13 +120,12 @@ const assertJobReferences = async ({ company, placementDrive, requiredSkills = [
 };
 
 const getJobs = asyncHandler(async (req, res) => {
-  const baseFilter = req.user.role === "student" ? { status: "open" } : {};
   const { items, meta } = await buildQueryFeatures({
     model: Job,
     query: req.query,
     searchableFields: ["title", "description", "location"],
     allowedFilters: ["company", "placementDrive", "location", "workMode", "jobType", "status"],
-    baseFilter,
+    baseFilter: getJobBaseFilter(req),
     populate: jobPopulate,
     defaultSort: "deadline",
   });
@@ -108,6 +138,10 @@ const getJobById = asyncHandler(async (req, res) => {
   if (req.user.role === "student") {
     filter.status = "open";
   }
+  if (req.user.role === "recruiter") {
+    const recruiterCompanyId = getRecruiterCompanyId(req.user);
+    filter.company = recruiterCompanyId || null;
+  }
 
   const job = await Job.findOne(filter).populate(jobPopulate);
 
@@ -119,10 +153,12 @@ const getJobById = asyncHandler(async (req, res) => {
 });
 
 const createJob = asyncHandler(async (req, res) => {
-  await assertJobReferences(req.body);
+  assertRecruiterCanManageCompany(req.user, req.body.company);
+  const payload = normalizeJobPayload(req.body);
+  await assertJobReferences(payload);
 
   const job = await Job.create({
-    ...normalizeJobPayload(req.body),
+    ...payload,
     createdBy: req.user._id,
   });
   await recordAuditLog({ req, action: "job_created", entityType: "Job", entityId: job._id });
@@ -136,15 +172,21 @@ const createJob = asyncHandler(async (req, res) => {
 });
 
 const updateJob = asyncHandler(async (req, res) => {
-  await assertJobReferences(req.body);
-
   const currentJob = await Job.findById(req.params.id);
 
   if (!currentJob) {
     throw new ApiError(404, "Job not found");
   }
 
-  const job = await Job.findByIdAndUpdate(req.params.id, normalizeJobPayload(req.body), {
+  assertRecruiterCanManageCompany(req.user, currentJob.company);
+  if (req.body.company) {
+    assertRecruiterCanManageCompany(req.user, req.body.company);
+  }
+
+  const payload = normalizeJobPayload(req.body);
+  await assertJobReferences(payload);
+
+  const job = await Job.findByIdAndUpdate(req.params.id, payload, {
     returnDocument: "after",
     runValidators: true,
   }).populate(jobPopulate);

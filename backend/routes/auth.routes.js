@@ -3,7 +3,6 @@ const { body } = require("express-validator");
 const multer = require("multer");
 const authController = require("../controllers/auth.controller");
 const protect = require("../middleware/auth.middleware");
-const { USER_ROLES } = require("../models/User");
 
 const router = express.Router();
 const upload = multer({
@@ -32,10 +31,6 @@ const registerValidation = [
     .withMessage("Password must contain at least one lowercase letter")
     .matches(/[0-9]/)
     .withMessage("Password must contain at least one number"),
-  body("role")
-    .optional()
-    .isIn(USER_ROLES)
-    .withMessage(`Role must be one of: ${USER_ROLES.join(", ")}`),
 ];
 
 const loginValidation = [

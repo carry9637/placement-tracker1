@@ -12,6 +12,9 @@ const {
 const router = express.Router();
 
 router.use(protect);
+
+router.get("/:id", authorizeRoles("admin", "recruiter"), idValidation, validateRequest, companyController.getCompanyById);
+
 router.use(authorizeRoles("admin"));
 
 router
@@ -21,7 +24,6 @@ router
 
 router
   .route("/:id")
-  .get(idValidation, validateRequest, companyController.getCompanyById)
   .patch(updateCompanyValidation, validateRequest, companyController.updateCompany)
   .delete(idValidation, validateRequest, companyController.deleteCompany);
 
