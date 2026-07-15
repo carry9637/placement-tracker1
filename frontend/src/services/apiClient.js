@@ -16,4 +16,18 @@ apiClient.interceptors.response.use(
 export const getApiErrorMessage = (error) =>
   error.response?.data?.message || error.message || "Something went wrong";
 
+export const buildApiUrl = (path, params = {}) => {
+  const baseURL = apiClient.defaults.baseURL || "";
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = new URL(`${baseURL.replace(/\/$/, "")}${normalizedPath}`);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  return url.toString();
+};
+
 export default apiClient;

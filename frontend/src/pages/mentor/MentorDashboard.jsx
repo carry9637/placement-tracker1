@@ -72,8 +72,8 @@ export function MentorDashboard() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <MetricCard label="Assigned students" value={data.stats.students} helper="From mentor review queue" icon={FiUsers} />
             <MetricCard label="Active applications" value={data.stats.activeApplications} helper="Open guidance work" icon={FiClipboard} />
-            <MetricCard label="Recommended" value={data.stats.shortlisted} helper="Mentor recommendations" icon={FiTrendingUp} />
-            <MetricCard label="Sessions" value={data.stats.upcomingInterviews} helper="Mentoring scheduled" icon={FiCalendar} />
+            <MetricCard label="Recommendations" value={data.stats.shortlisted} helper="Mentor recommendations" icon={FiTrendingUp} />
+            <MetricCard label="Pending sessions" value={data.stats.upcomingInterviews} helper="Mentoring scheduled" icon={FiCalendar} />
             <MetricCard label="Notes" value={data.stats.notes} helper="Mentor timeline" icon={FiMessageSquare} />
           </div>
 

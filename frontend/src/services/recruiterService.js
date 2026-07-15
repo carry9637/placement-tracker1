@@ -1,4 +1,4 @@
-import apiClient from "./apiClient";
+import apiClient, { buildApiUrl } from "./apiClient";
 
 const unwrap = (response) => response.data;
 
@@ -31,6 +31,10 @@ export const recruiterService = {
   async getApplication(id) {
     const response = await apiClient.get("/applications/" + id);
     return unwrap(response);
+  },
+
+  getApplicationResumeUrl(id, download = false) {
+    return buildApiUrl(`/applications/${id}/resume`, { download });
   },
 
   async updateApplicationStatus(id, payload) {

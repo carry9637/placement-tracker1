@@ -96,6 +96,16 @@ const statusNotificationMap = {
     title: "Offer released",
     message: "An offer has been released for your application.",
   },
+  "offer-accepted": {
+    type: "offer-accepted",
+    title: "Offer accepted",
+    message: "Your offer response has been recorded as accepted.",
+  },
+  "offer-declined": {
+    type: "offer-declined",
+    title: "Offer declined",
+    message: "Your offer response has been recorded as declined.",
+  },
   "offer-received": {
     type: "offer-released",
     title: "Offer received",
@@ -124,17 +134,46 @@ const notifyStatusChange = async ({ req, application, status }) => {
   const notification = statusNotificationMap[status];
   const studentId = application.student?._id || application.student;
 
-  if (!notification || !studentId) {
-    return;
+  if (notification && studentId) {
+    await createNotification({
+      user: studentId,
+      ...notification,
+      entityType: "Application",
+      entityId: application._id,
+      createdBy: req.user._id,
+    });
   }
 
-  await createNotification({
-    user: studentId,
-    ...notification,
-    entityType: "Application",
-    entityId: application._id,
-    createdBy: req.user._id,
-  });
+  const companyId = application.job?.company?._id || application.job?.company;
+  if (status === "offer-accepted" && companyId) {
+    const recruiters = await User.find({ role: "recruiter", recruiterCompany: companyId, isActive: true }).select("_id");
+    await Promise.all(
+      recruiters.map((recruiter) =>
+        createNotification({
+          user: recruiter._id,
+          type: "student-accepted-offer",
+          title: "Student accepted offer",
+          message: "A student has accepted your released offer.",
+          entityType: "Application",
+          entityId: application._id,
+          createdBy: req.user._id,
+        })
+      )
+    );
+  }
+
+  const assignedMentorId = application.student?.assignedMentor;
+  if (status === "mentoring-scheduled" && assignedMentorId) {
+    await createNotification({
+      user: assignedMentorId,
+      type: "session-scheduled",
+      title: "Session scheduled",
+      message: "A mentoring session has been scheduled for an assigned student.",
+      entityType: "Application",
+      entityId: application._id,
+      createdBy: req.user._id,
+    });
+  }
 };
 
 const canAccessApplication = (user, application) => {
@@ -264,6 +303,35 @@ const getApplicationById = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, application, "Application fetched successfully"));
 });
 
+const getApplicationResume = asyncHandler(async (req, res) => {
+  const application = await Application.findById(req.params.id).populate([
+    { path: "student", select: "name profile" },
+    { path: "job", select: "company" },
+  ]);
+
+  if (!application || !canAccessApplication(req.user, application)) {
+    throw new ApiError(404, "Application not found");
+  }
+
+  const studentId = application.student?._id || application.student;
+  const student = await User.findById(studentId).select("+profile.resume.data profile.resume name");
+  const resume = student?.profile?.resume;
+
+  if (!resume?.fileName) {
+    throw new ApiError(404, "Resume not uploaded");
+  }
+
+  if (!resume.data?.length) {
+    throw new ApiError(404, "Resume file content is unavailable for this upload");
+  }
+
+  const disposition = req.query.download === "true" || req.query.download === "1" ? "attachment" : "inline";
+  res.setHeader("Content-Type", resume.mimeType || "application/octet-stream");
+  res.setHeader("Content-Length", resume.data.length);
+  res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(resume.fileName)}"`);
+  res.send(resume.data);
+});
+
 const createApplication = asyncHandler(async (req, res) => {
   const job = await Job.findById(req.body.job);
 
@@ -292,6 +360,21 @@ const createApplication = asyncHandler(async (req, res) => {
       },
     ],
   });
+
+  const recruiters = await User.find({ role: "recruiter", recruiterCompany: job.company, isActive: true }).select("_id");
+  await Promise.all(
+    recruiters.map((recruiter) =>
+      createNotification({
+        user: recruiter._id,
+        type: "new-application",
+        title: "New application",
+        message: "A student has applied to one of your jobs.",
+        entityType: "Application",
+        entityId: application._id,
+        createdBy: req.user._id,
+      })
+    )
+  );
 
   const populatedApplication = await Application.findById(application._id).populate(applicationPopulate);
   res.status(201).json(new ApiResponse(201, populatedApplication, "Application submitted successfully"));
@@ -391,6 +474,7 @@ const deleteApplication = asyncHandler(async (req, res) => {
 module.exports = {
   getApplications,
   getApplicationById,
+  getApplicationResume,
   createApplication,
   updateApplication,
   updateApplicationStatus,

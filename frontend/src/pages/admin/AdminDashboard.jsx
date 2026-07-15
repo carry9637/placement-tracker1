@@ -1,4 +1,4 @@
-import { FiBriefcase, FiCalendar, FiClipboard, FiFlag, FiHome, FiUsers } from "react-icons/fi";
+import { FiBriefcase, FiCalendar, FiClipboard, FiDollarSign, FiFlag, FiHome, FiTrendingUp, FiUsers } from "react-icons/fi";
 import { PageContainer } from "../../components/common/PageContainer";
 import { ErrorState } from "../../components/feedback/ErrorState";
 import { SkeletonLoader } from "../../components/feedback/SkeletonLoader";
@@ -7,21 +7,25 @@ import { StatusBadge } from "../../components/student/StatusBadge";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { useAsyncData } from "../../hooks/useAsyncData";
 import { adminService } from "../../services/adminService";
-import { compactDate, getUniqueStudentsFromApplications } from "../../utils/adminMetrics";
+import { compactDate, getPackageStats, getUniqueStudentsFromApplications } from "../../utils/adminMetrics";
 
 export function AdminDashboard() {
   const dashboard = useAsyncData(async () => {
     const [companies, jobs, applications, interviews, recruiters, drives] = await Promise.all([
       adminService.getCompanies({ limit: 1 }),
-      adminService.getJobs({ limit: 1 }),
+      adminService.getJobs({ limit: 100 }),
       adminService.getApplications({ limit: 100 }),
       adminService.getInterviews({ limit: 100 }),
       adminService.getUsers({ role: "recruiter", limit: 1 }),
-      adminService.getPlacementDrives({ limit: 1 }),
+      adminService.getPlacementDrives({ limit: 100 }),
     ]);
 
     const applicationItems = applications.data || [];
+    const jobItems = jobs.data || [];
+    const driveItems = drives.data || [];
     const students = getUniqueStudentsFromApplications(applicationItems);
+    const placedStudents = getUniqueStudentsFromApplications(applicationItems.filter((application) => application.status === "offer-accepted"));
+    const packageStats = getPackageStats(jobItems);
     const recentActivities = applicationItems
       .flatMap((application) =>
         (application.timeline || []).map((activity) => ({
@@ -42,6 +46,10 @@ export function AdminDashboard() {
           interviews: interviews.meta?.total || 0,
           recruiters: recruiters.meta?.total || 0,
           drives: drives.meta?.total || 0,
+          placementPercentage: students.length ? Math.round((placedStudents.length / students.length) * 100) : 0,
+          activeDrives: driveItems.filter((drive) => ["published", "registration-open", "in-progress"].includes(drive.status)).length,
+          highestPackage: packageStats.highest,
+          averagePackage: packageStats.average,
         },
         recentActivities,
       },
@@ -58,14 +66,17 @@ export function AdminDashboard() {
         <ErrorState description={dashboard.error} />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+            <MetricCard label="Placement %" value={`${totals.placementPercentage}%`} helper="Accepted offers from applicants" icon={FiTrendingUp} />
             <MetricCard label="Students" value={totals.students} helper="Derived from applications" icon={FiUsers} />
             <MetricCard label="Companies" value={totals.companies} helper="Placement partners" icon={FiHome} />
             <MetricCard label="Recruiters" value={totals.recruiters} helper="Company HR accounts" icon={FiUsers} />
-            <MetricCard label="Drives" value={totals.drives} helper="Campus hiring drives" icon={FiFlag} />
+            <MetricCard label="Active drives" value={totals.activeDrives} helper={`${totals.drives} campus hiring drives`} icon={FiFlag} />
             <MetricCard label="Jobs" value={totals.jobs} helper="All job records" icon={FiBriefcase} />
             <MetricCard label="Applications" value={totals.applications} helper="Submitted pipelines" icon={FiClipboard} />
             <MetricCard label="Interviews" value={totals.interviews} helper="Scheduled rounds" icon={FiCalendar} />
+            <MetricCard label="Highest package" value={totals.highestPackage} helper="From disclosed job salary" icon={FiDollarSign} />
+            <MetricCard label="Average package" value={totals.averagePackage} helper="From disclosed job salary" icon={FiDollarSign} />
           </div>
 
           <GlassCard className="mt-6">

@@ -90,6 +90,11 @@ const studentProfileSchema = new mongoose.Schema(
         type: Date,
         default: null,
       },
+      data: {
+        type: Buffer,
+        select: false,
+        default: undefined,
+      },
     },
     notifications: {
       email: {

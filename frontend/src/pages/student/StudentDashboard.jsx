@@ -1,4 +1,4 @@
-import { FiBell, FiBriefcase, FiCalendar, FiCheckCircle, FiTarget } from "react-icons/fi";
+import { FiBell, FiBriefcase, FiCalendar, FiCheckCircle, FiExternalLink, FiTarget } from "react-icons/fi";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { PageContainer } from "../../components/common/PageContainer";
 import { ErrorState } from "../../components/feedback/ErrorState";
@@ -43,11 +43,11 @@ export function StudentDashboard() {
     <PageContainer eyebrow="Student dashboard" title={`Welcome back, ${user?.name || "Student"}`} description="Live view of your placement journey from real backend data.">
       {loading ? <SkeletonLoader rows={5} /> : error ? <ErrorState description={error} /> : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <MetricCard label="Readiness score" value={`${readiness}%`} helper="Profile, resume, applications, interviews" icon={FiTarget} />
-            <MetricCard label="Profile" value={`${profileCompletion}%`} helper={profile.resume?.fileName ? "Resume uploaded" : "Resume pending"} icon={FiCheckCircle} />
-            <MetricCard label="Applications" value={stats.total} helper={`${stats.active} active pipelines`} icon={FiBriefcase} />
-            <MetricCard label="Interviews" value={interviewItems.length} helper="Scheduled and completed rounds" icon={FiCalendar} />
+            <MetricCard label="Resume status" value={profile.resume?.fileName ? "Uploaded" : "Pending"} helper={`${profileCompletion}% profile complete`} icon={FiCheckCircle} />
+            <MetricCard label="Active applications" value={stats.active} helper={`${stats.total} submitted total`} icon={FiBriefcase} />
+            <MetricCard label="Upcoming interview" value={upcomingInterviews.length} helper="Pending scheduled rounds" icon={FiCalendar} />
             <MetricCard label="Offers" value={stats.offers} helper="Released or accepted offers" icon={FiBell} />
           </div>
 
@@ -92,7 +92,15 @@ export function StudentDashboard() {
                 {upcomingInterviews.length ? upcomingInterviews.map((interview) => (
                   <div key={interview._id} className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-300">
                     <p className="font-medium text-white">{interview.application?.job?.title || "Interview"}</p>
-                    <p className="mt-1 text-slate-400">{formatDate(interview.date)} - {interview.type}</p>
+                    <p className="mt-1 text-slate-400">{formatDate(interview.date)} - {interview.time || interview.type}</p>
+                    <p className="mt-2 text-xs text-slate-500">Status: {interview.result} - Next round: {interview.round || interview.type}</p>
+                    <p className="mt-1 break-words text-xs text-slate-500">Meeting link: {interview.meetingLink || "Not set"}</p>
+                    {interview.meetingLink ? (
+                      <a className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200 hover:text-white" href={interview.meetingLink} target="_blank" rel="noreferrer">
+                        <FiExternalLink className="h-4 w-4" />
+                        Join meeting
+                      </a>
+                    ) : null}
                   </div>
                 )) : <p className="text-sm text-slate-400">No upcoming interviews yet.</p>}
               </div>

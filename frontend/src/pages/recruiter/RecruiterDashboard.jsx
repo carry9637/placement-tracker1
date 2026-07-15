@@ -35,11 +35,11 @@ export function RecruiterDashboard() {
       ) : (
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <MetricCard label="Active jobs" value={stats.activeJobs} helper="Open or draft roles" icon={FiBriefcase} />
+            <MetricCard label="Open jobs" value={stats.openJobs} helper={`${stats.activeJobs} active or draft roles`} icon={FiBriefcase} />
             <MetricCard label="Applicants" value={stats.applicants} helper="Company-scoped candidates" icon={FiUsers} />
-            <MetricCard label="Pending review" value={stats.pendingReview} helper="Shortlisted or recruiter review" icon={FiClipboard} />
-            <MetricCard label="Interviews" value={stats.interviewsPending} helper="Pending interview rounds" icon={FiCalendar} />
-            <MetricCard label="Offers" value={stats.offers} helper="Released or responded" icon={FiSend} />
+            <MetricCard label="Pending reviews" value={stats.pendingReview} helper="Shortlisted or recruiter review" icon={FiClipboard} />
+            <MetricCard label="Today's interviews" value={stats.todaysInterviews} helper={`${stats.interviewsPending} pending rounds`} icon={FiCalendar} />
+            <MetricCard label="Offers sent" value={stats.offersSent} helper={`${stats.offers} released or responded`} icon={FiSend} />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -77,7 +77,9 @@ export function RecruiterDashboard() {
                   {upcomingInterviews.map((interview) => (
                     <div key={interview._id} className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
                       <p className="font-medium text-white">{interview.application?.student?.name || "Candidate"}</p>
-                      <p className="mt-1 text-sm text-slate-400">{interview.type} - {formatRecruiterDateTime(interview.date)}</p>
+                      <p className="mt-1 text-sm text-slate-400">{interview.round || interview.type} - {formatRecruiterDateTime(interview.date)}</p>
+                      <p className="mt-2 text-xs text-slate-500">{interview.mode || "Mode not set"} - {interview.interviewerName || "Interviewer not set"}</p>
+                      {interview.meetingLink ? <a className="mt-3 inline-flex text-sm font-semibold text-cyan-200 hover:text-white" href={interview.meetingLink} target="_blank" rel="noreferrer">Join meeting</a> : null}
                     </div>
                   ))}
                 </div>

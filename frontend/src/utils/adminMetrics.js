@@ -35,3 +35,24 @@ export const moneyRange = (salary = {}) => {
   if (min) return (salary.currency || "INR") + " " + min + "+";
   return "Disclosed";
 };
+
+export const getPackageStats = (jobs = []) => {
+  const disclosed = jobs
+    .map((job) => job.salary)
+    .filter((salary) => salary?.isDisclosed)
+    .map((salary) => Number(salary.max || salary.min || 0))
+    .filter((value) => value > 0);
+
+  if (!disclosed.length) {
+    return { highest: "Undisclosed", average: "Undisclosed" };
+  }
+
+  const format = (value) => `INR ${Math.round(value).toLocaleString("en-IN")}`;
+  const highest = Math.max(...disclosed);
+  const average = disclosed.reduce((sum, value) => sum + value, 0) / disclosed.length;
+
+  return {
+    highest: format(highest),
+    average: format(average),
+  };
+};

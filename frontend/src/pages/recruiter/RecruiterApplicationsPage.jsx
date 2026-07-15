@@ -13,12 +13,23 @@ import { Input } from "../../components/ui/Input";
 import { useAsyncData } from "../../hooks/useAsyncData";
 import { getApiErrorMessage } from "../../services/apiClient";
 import { recruiterService } from "../../services/recruiterService";
-import { applicationStatusOptions, formatRecruiterDate, interviewTypeOptions } from "../../utils/recruiterMetrics";
+import { applicationStatusOptions, formatRecruiterDate, interviewModeOptions, interviewTypeOptions } from "../../utils/recruiterMetrics";
+
+const emptyScheduleDraft = {
+  applicationId: "",
+  date: "",
+  type: "technical",
+  mode: "online",
+  meetingLink: "",
+  interviewerName: "",
+  round: "",
+  instructions: "",
+};
 
 export function RecruiterApplicationsPage() {
   const [query, setQuery] = useState({ search: "", status: "", page: 1 });
   const [workingId, setWorkingId] = useState("");
-  const [scheduleDraft, setScheduleDraft] = useState({ applicationId: "", date: "", type: "technical" });
+  const [scheduleDraft, setScheduleDraft] = useState(emptyScheduleDraft);
   const applications = useAsyncData(() => recruiterService.getApplications({ status: query.status, limit: 100, sort: "-updatedAt" }), [query.status]);
   const filteredApplications = (applications.data || []).filter((application) => {
     const search = query.search.trim().toLowerCase();
@@ -56,9 +67,14 @@ export function RecruiterApplicationsPage() {
         application: application._id,
         date: new Date(scheduleDraft.date).toISOString(),
         type: scheduleDraft.type,
+        mode: scheduleDraft.mode,
+        meetingLink: scheduleDraft.meetingLink,
+        interviewerName: scheduleDraft.interviewerName,
+        round: scheduleDraft.round,
+        instructions: scheduleDraft.instructions,
       });
       toast.success("Interview scheduled");
-      setScheduleDraft({ applicationId: "", date: "", type: "technical" });
+      setScheduleDraft(emptyScheduleDraft);
       refresh();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
@@ -121,7 +137,7 @@ export function RecruiterApplicationsPage() {
                     <Button variant="secondary" icon={FiCheck} disabled={workingId === application._id} onClick={() => updateStatus(application, "selected", "Recommended for hire by recruiter")}>Recommend hire</Button>
                   ) : null}
                   {canSchedule ? (
-                    <Button variant="secondary" icon={FiCalendar} disabled={workingId === application._id} onClick={() => setScheduleDraft({ applicationId: application._id, date: "", type: "technical" })}>Schedule</Button>
+                    <Button variant="secondary" icon={FiCalendar} disabled={workingId === application._id} onClick={() => setScheduleDraft({ ...emptyScheduleDraft, applicationId: application._id })}>Schedule</Button>
                   ) : null}
                   {!["offer-released", "offer-accepted", "offer-declined", "rejected", "withdrawn"].includes(application.status) ? (
                     <Button variant="danger" icon={FiX} disabled={workingId === application._id} onClick={() => updateStatus(application, "rejected", "Rejected by recruiter")}>Reject</Button>
@@ -129,7 +145,7 @@ export function RecruiterApplicationsPage() {
                 </div>
 
                 {scheduleDraft.applicationId === application._id ? (
-                  <div className="mt-4 grid gap-3 rounded-xl border border-cyan-300/15 bg-cyan-300/5 p-3 md:grid-cols-[1fr_180px_auto]">
+                  <div className="mt-4 grid gap-3 rounded-xl border border-cyan-300/15 bg-cyan-300/5 p-3 md:grid-cols-3">
                     <Input label="Interview date" type="datetime-local" value={scheduleDraft.date} onChange={(event) => setScheduleDraft((value) => ({ ...value, date: event.target.value }))} />
                     <label>
                       <span className="mb-2 block text-sm font-medium text-slate-300">Type</span>
@@ -137,9 +153,22 @@ export function RecruiterApplicationsPage() {
                         {interviewTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                       </select>
                     </label>
-                    <div className="flex items-end gap-2">
+                    <label>
+                      <span className="mb-2 block text-sm font-medium text-slate-300">Mode</span>
+                      <select className="h-12 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 text-sm text-white" value={scheduleDraft.mode} onChange={(event) => setScheduleDraft((value) => ({ ...value, mode: event.target.value }))}>
+                        {interviewModeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </select>
+                    </label>
+                    <Input label="Interview round" value={scheduleDraft.round} onChange={(event) => setScheduleDraft((value) => ({ ...value, round: event.target.value }))} />
+                    <Input label="Interviewer" value={scheduleDraft.interviewerName} onChange={(event) => setScheduleDraft((value) => ({ ...value, interviewerName: event.target.value }))} />
+                    <Input label="Meeting link" value={scheduleDraft.meetingLink} onChange={(event) => setScheduleDraft((value) => ({ ...value, meetingLink: event.target.value }))} />
+                    <label className="md:col-span-3">
+                      <span className="mb-2 block text-sm font-medium text-slate-300">Instructions</span>
+                      <textarea className="min-h-24 w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60 focus:ring-4 focus:ring-cyan-400/10" value={scheduleDraft.instructions} onChange={(event) => setScheduleDraft((value) => ({ ...value, instructions: event.target.value }))} />
+                    </label>
+                    <div className="flex items-end gap-2 md:col-span-3">
                       <Button disabled={workingId === application._id} onClick={() => scheduleInterview(application)}>Save</Button>
-                      <Button variant="ghost" onClick={() => setScheduleDraft({ applicationId: "", date: "", type: "technical" })}>Cancel</Button>
+                      <Button variant="ghost" onClick={() => setScheduleDraft(emptyScheduleDraft)}>Cancel</Button>
                     </div>
                   </div>
                 ) : null}

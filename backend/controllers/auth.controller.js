@@ -132,6 +132,7 @@ const uploadResume = asyncHandler(async (req, res) => {
     mimeType: req.file.mimetype,
     size: req.file.size,
     uploadedAt: new Date(),
+    data: req.file.buffer,
   };
 
   await req.user.save({ validateBeforeSave: true });

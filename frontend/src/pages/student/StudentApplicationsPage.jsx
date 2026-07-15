@@ -76,7 +76,7 @@ export function StudentApplicationsPage() {
                 <StatusBadge status={application.status} />
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
-                {(application.timeline || []).slice(-3).map((item, index) => (
+                {(application.timeline || []).map((item, index) => (
                   <div key={`${item.changedAt}-${index}`} className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
                     <StatusBadge status={item.status} />
                     <p className="mt-3 text-sm text-slate-300">{item.note}</p>

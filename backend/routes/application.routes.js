@@ -35,6 +35,8 @@ router.patch(
   applicationController.withdrawApplication
 );
 
+router.get("/:id/resume", authorizeRoles("student", "admin", "recruiter"), idValidation, validateRequest, applicationController.getApplicationResume);
+
 router
   .route("/:id")
   .get(idValidation, validateRequest, applicationController.getApplicationById)

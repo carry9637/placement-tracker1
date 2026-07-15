@@ -63,6 +63,15 @@ const assignMentor = asyncHandler(async (req, res) => {
     entityId: mentor._id,
     createdBy: req.user._id,
   });
+  await createNotification({
+    user: mentor._id,
+    type: "student-assigned",
+    title: "Student assigned",
+    message: `${student.name} has been assigned to you for placement guidance.`,
+    entityType: "User",
+    entityId: student._id,
+    createdBy: req.user._id,
+  });
 
   const populatedStudent = await User.findById(student._id).select(userSelect).populate(userPopulate);
   res.status(200).json(new ApiResponse(200, populatedStudent, "Mentor assigned successfully"));
@@ -92,6 +101,21 @@ const approveRecruiter = asyncHandler(async (req, res) => {
     entityId: recruiter._id,
     metadata: { company: company._id },
   });
+
+  const admins = await User.find({ role: "admin", isActive: true }).select("_id");
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification({
+        user: admin._id,
+        type: "recruiter-approved",
+        title: "Recruiter approved",
+        message: `${recruiter.name} has been approved for ${company.name}.`,
+        entityType: "User",
+        entityId: recruiter._id,
+        createdBy: req.user._id,
+      })
+    )
+  );
 
   const populatedRecruiter = await User.findById(recruiter._id).select(userSelect).populate(userPopulate);
   res.status(200).json(new ApiResponse(200, populatedRecruiter, "Recruiter approved successfully"));

@@ -112,6 +112,12 @@ const createInterview = asyncHandler(async (req, res) => {
   }
 
   const interview = await Interview.create(req.body);
+  application.timeline.push({
+    status: "interview-scheduled",
+    note: `${interview.round || interview.type || "Interview"} scheduled`,
+    changedBy: req.user._id,
+  });
+  await application.save();
   await recordAuditLog({
     req,
     action: "interview_scheduled",
@@ -144,11 +150,35 @@ const updateInterview = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Interview not found");
   }
 
-  ["date", "type", "score", "feedback", "result"].forEach((field) => {
+  ["date", "time", "type", "mode", "meetingLink", "interviewerName", "round", "instructions", "score", "feedback", "result"].forEach((field) => {
     if (req.body[field] !== undefined) interview[field] = req.body[field];
   });
 
   await interview.save();
+  const applicationId = interview.application?._id || interview.application;
+  if (applicationId) {
+    await Application.findByIdAndUpdate(applicationId, {
+      $push: {
+        timeline: {
+          status: "interview-scheduled",
+          note: "Interview details updated",
+          changedBy: req.user._id,
+        },
+      },
+    });
+  }
+  const studentId = interview.application?.student?._id || interview.application?.student;
+  if (studentId) {
+    await createNotification({
+      user: studentId,
+      type: "interview-updated",
+      title: "Interview updated",
+      message: "Your interview details have been updated.",
+      entityType: "Interview",
+      entityId: interview._id,
+      createdBy: req.user._id,
+    });
+  }
   const populatedInterview = await Interview.findById(interview._id).populate(interviewPopulate);
   res.status(200).json(new ApiResponse(200, populatedInterview, "Interview updated successfully"));
 });

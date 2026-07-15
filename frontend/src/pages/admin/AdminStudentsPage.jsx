@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FiCheck, FiSearch, FiX } from "react-icons/fi";
+import { FiCheck, FiDownload, FiExternalLink, FiSearch, FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { PageContainer } from "../../components/common/PageContainer";
 import { EmptyState } from "../../components/feedback/EmptyState";
@@ -147,6 +147,29 @@ export function AdminStudentsPage() {
               <p>Email: {selectedStudent.email}</p>
               <p className="mt-2">Role: {selectedStudent.role}</p>
               <p className="mt-2">Applications: {selectedStudent.applications}</p>
+              <div className="mt-4 rounded-xl bg-white/[0.04] p-3">
+                <p className="font-medium text-white">Resume</p>
+                {selectedStudent.profile?.resume?.fileName && selectedStudent.latestApplication?._id ? (
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p>{selectedStudent.profile.resume.fileName}</p>
+                      <p className="mt-1 text-xs text-slate-500">Uploaded {compactDate(selectedStudent.profile.resume.uploadedAt)}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15" href={adminService.getApplicationResumeUrl(selectedStudent.latestApplication._id)} target="_blank" rel="noreferrer">
+                        <FiExternalLink className="h-4 w-4" />
+                        Preview
+                      </a>
+                      <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15" href={adminService.getApplicationResumeUrl(selectedStudent.latestApplication._id, true)} target="_blank" rel="noreferrer">
+                        <FiDownload className="h-4 w-4" />
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-slate-500">No resume uploaded yet.</p>
+                )}
+              </div>
               <label className="mt-4 block">
                 <span className="mb-2 block text-sm font-medium text-slate-300">Assigned mentor</span>
                 <select
@@ -237,9 +260,16 @@ export function AdminStudentsPage() {
                         {applicationInterviews.map((interview) => (
                           <div key={interview._id} className="rounded-xl border border-white/10 bg-slate-900/55 p-3">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                              <p className="text-white">{interview.type} round - {compactDate(interview.date)}</p>
+                              <p className="text-white">{interview.round || interview.type} - {compactDate(interview.date)}</p>
                               <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300">{interview.result}</span>
                             </div>
+                            <div className="mt-3 grid gap-2 text-sm text-slate-400 sm:grid-cols-2">
+                              <p>Mode: {interview.mode || "Not set"}</p>
+                              <p>Time: {interview.time || "Not set"}</p>
+                              <p>Interviewer: {interview.interviewerName || "Not set"}</p>
+                              <p>Meeting: {interview.meetingLink ? "Available" : "Not set"}</p>
+                            </div>
+                            {interview.instructions ? <p className="mt-3 text-sm text-slate-400">{interview.instructions}</p> : null}
                             {interview.score != null ? <p className="mt-3 text-sm text-slate-400">Score: {interview.score}/100</p> : null}
                             {interview.feedback ? <p className="mt-3 text-sm text-slate-400">{interview.feedback}</p> : null}
                           </div>
@@ -250,11 +280,25 @@ export function AdminStudentsPage() {
                         No recruiter interview is scheduled for this application.
                       </p>
                     )}
+
+                    {(application.timeline || []).length ? (
+                      <div className="mt-4">
+                        <p className="mb-3 font-medium text-white">Activity timeline</p>
+                        <div className="grid gap-3 md:grid-cols-3">
+                          {application.timeline.map((item, index) => (
+                            <div key={`${item.changedAt}-${index}`} className="rounded-xl border border-white/10 bg-slate-900/55 p-3">
+                              <StatusBadge status={item.status} />
+                              <p className="mt-3 text-sm text-slate-400">{item.note || "Status updated"}</p>
+                              <p className="mt-2 text-xs text-slate-500">{compactDate(item.changedAt)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
             </div>
-            <ErrorState title="Resume not exposed by current APIs" description="The existing application API returns student identity fields only. Resume viewing can be enabled when a user/profile admin endpoint is added." />
           </div>
         ) : null}
       </Modal>

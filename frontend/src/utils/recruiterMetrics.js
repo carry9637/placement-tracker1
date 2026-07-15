@@ -30,19 +30,33 @@ export const formatRecruiterDateTime = (value) => {
 export const getRecruiterCompanyId = (user) => user?.recruiterCompany?._id || user?.recruiterCompany || "";
 
 export const getRecruiterStats = ({ jobs = [], applications = [], interviews = [] }) => {
+  const openJobs = jobs.filter((job) => job.status === "open").length;
   const activeJobs = jobs.filter((job) => ["open", "draft"].includes(job.status)).length;
   const pendingReview = applications.filter((application) => ["shortlisted", "recruiter-review"].includes(application.status)).length;
   const interviewsPending = interviews.filter((interview) => interview.result === "pending").length;
+  const today = new Date().toDateString();
+  const todaysInterviews = interviews.filter((interview) => interview.date && new Date(interview.date).toDateString() === today).length;
   const offers = applications.filter((application) => ["offer-released", "offer-accepted", "offer-declined"].includes(application.status)).length;
+  const offersSent = applications.filter((application) => ["offer-released", "offer-accepted"].includes(application.status)).length;
 
   return {
+    openJobs,
     activeJobs,
     applicants: applications.length,
     pendingReview,
     interviewsPending,
+    todaysInterviews,
     offers,
+    offersSent,
   };
 };
+
+export const interviewModeOptions = [
+  ["online", "Online"],
+  ["offline", "Offline"],
+  ["hybrid", "Hybrid"],
+  ["phone", "Phone"],
+];
 
 export const getCandidateReadinessScore = (application, interviews = []) => {
   const profile = application?.student?.profile || {};
